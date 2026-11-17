@@ -7,6 +7,7 @@
 <tr><th>メソッド</th><th>パス</th><th>内容</th></tr>
 <tr><td>GET</td><td><code>/widget.js</code></td><td>ブラウザ用ウィジェット本体</td></tr>
 <tr><td>GET</td><td><code>/author.png</code></td><td>トップページ「作った人」のアイコン（GitHub のアイコンを保存した静的ファイル。外部の画像を読み込まないため）</td></tr>
+<tr><td>GET</td><td><code>/en/privacy</code>・<code>/en/terms</code>・<code>/en/changelog</code></td><td>英語版の静的ページ（日本語版が正）。日本語版と相互にリンクする</td></tr>
 <tr><td>GET</td><td><code>/changelog</code></td><td>リリースノート（静的ファイル。元データは <code>CHANGELOG.md</code>。リリースのたびに両方と GitHub Releases を更新する）</td></tr>
 <tr><td>GET</td><td><code>/privacy</code>・<code>/terms</code></td><td>プライバシーポリシー・利用規約。公式ホストの静的ファイル（<code>apps/hosted/public/*.html</code>）。トップ・フォーム・キー確認画面のフッターからリンクする。収集する情報を変えたら必ず更新する</td></tr>
 <tr><td>GET</td><td><code>/llms.txt</code></td><td>AI コーディングエージェント向けの導入手順（英語、プレーンテキスト）。公式ホストの静的ファイル</td></tr>
@@ -21,6 +22,8 @@
 <tr><td>POST</td><td><code>/api/pending</code></td><td>承認待ちの起票・破棄（4.7）</td></tr>
 <tr><td>POST</td><td><code>/webhook</code></td><td>GitHub App の Webhook</td></tr>
 </table>
+<h2>4.0 表示言語</h2>
+<p>トップページ・管理画面は日本語と英語に対応する。言語は <code>?lang=ja|en</code> → クッキー <code>pi_lang</code>（<code>?lang=</code> を指定したときに 1 年保存）→ <code>Accept-Language</code>（日本語以外は英語）の順で決める。トップページのナビに切り替えリンクを置く。静的ページは <code>/en/*</code> に英語版を置く。フォームは 8.2 のとおり独自に切り替える。</p>
 <h2>4.1 GET /r/:projectKey</h2>
 <p>クエリはすべて文字列で <code>meta</code> に入る（例：<code>?app_version=1.2.0&amp;os=ios</code>）。ただし <code>kinds</code>（カンマ区切り）は表示する種別の指定に、<code>lang</code>（<code>ja</code> / <code>en</code>）は最初に表示する言語の指定に使う。meta のキーは英数字・_・- のみ受け付ける。存在しないキーは 404。</p>
 <h2>4.2 POST /api/report</h2>

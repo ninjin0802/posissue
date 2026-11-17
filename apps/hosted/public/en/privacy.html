@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Privacy Policy | PosIssue</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><style>:root{--bg:#fbfbfe;--fg:#16161d;--muted:#5f5f70;--line:#e6e6ef;--card:#fff;--accent:#5b5bd6}@media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--fg:#ececf3;--muted:#9d9db0;--line:#24242f;--card:#14141c;--accent:#8b8bf5}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.85 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}.w{max-width:760px;margin:0 auto;padding:28px 20px 64px}header a{display:inline-flex;align-items:center;gap:10px;font-weight:800;text-decoration:none;color:inherit}header img{width:32px;height:32px}h1{font-size:28px;margin:28px 0 6px;letter-spacing:-.01em}.meta{color:var(--muted);font-size:14px;margin:0 0 28px}h2{font-size:19px;margin:34px 0 8px;padding-top:14px;border-top:1px solid var(--line)}ul,ol{padding-left:1.4em}li{margin:4px 0}a{color:var(--accent)}table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0;display:block;overflow-x:auto}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--card)}.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--muted)}footer{margin-top:48px;color:var(--muted);font-size:14px;display:flex;gap:16px;flex-wrap:wrap}</style></head><body><div class="w"><header><a href="/"><img src="/icon.svg" alt="" width="32" height="32">PosIssue</a></header>
+<h1>Privacy Policy</h1>
+<p class="meta">Effective: November 17, 2026 / Updated: November 17, 2026 (approval mode) / Operator: ninjin0802 (individual)</p>
+<p>PosIssue (the “Service”) lets anyone send GitHub issues from a widget placed on a website or app, without a GitHub account. This page explains what information the Service handles and how. The Japanese version is authoritative; this is a translation.</p>
+<h2>1. People who send reports (reporters)</h2>
+<p>When you submit the form, the following information is <strong>posted as a GitHub issue in the destination repository</strong>. For public repositories, anyone can see it.</p>
+<table><tr><th>Information</th><th>Details</th></tr>
+<tr><td>What you enter</td><td>Type, title and the form fields</td></tr>
+<tr><td>Page URL</td><td>The URL of the page where the widget was opened (without query string and hash)</td></tr>
+<tr><td>Browser information</td><td>User agent, language setting and viewport size</td></tr>
+<tr><td>App information</td><td>Information added by the app (app version, OS, etc.)</td></tr></table>
+<p>If the destination uses <strong>approval mode</strong> (on by default for public repositories), your report is not posted immediately. It is posted only when a repository admin reviews it and chooses “Publish”. Until then, the information above is <strong>stored by the Service for up to 14 days</strong> and visible only to repository admins. It is deleted when an admin chooses “Discard” or after 14 days.</p>
+<p>The Service <strong>does not collect or store your IP address, name, email address or GitHub account</strong>. Your IP address is used only temporarily for:</p>
+<ul><li>Bot protection with Cloudflare Turnstile (processed by Cloudflare)</li>
+<li>Rate limiting (counting requests over a short time; not stored)</li>
+<li>Duplicate detection (a hash of the content is kept for 24 hours; the content itself is not stored)</li></ul>
+<p>Please do not enter personal or sensitive information. Editing or deleting a posted issue is up to the repository’s maintainers; please contact them first.</p>
+<h2>2. People who install the widget (maintainers)</h2>
+<p>When you install the GitHub App or use the dashboard (/admin) or the CLI, the Service handles:</p>
+<ul><li>The GitHub App installation ID and the selected repository names (stored with the project key)</li>
+<li>A temporary authorization issued when you sign in with GitHub (used only to check which repositories you can access; <strong>not stored</strong>)</li></ul>
+<p>The Service asks GitHub only for read/write access to issues and read access to metadata. It does not read your source code.</p>
+<h2>3. Third-party services</h2>
+<ul><li><strong>Cloudflare</strong> (Workers, D1, Turnstile): running the Service, storing data, bot protection</li>
+<li><strong>GitHub</strong>: creating issues, App authentication, verifying maintainers</li></ul>
+<p>These companies handle information under their own privacy policies.</p>
+<h2>4. Cookies</h2>
+<p>The dashboard sign-in uses a cookie (<code>pi_state</code>) for up to 10 minutes to prevent forged sign-ins, and the site remembers your language choice in a cookie (<code>pi_lang</code>). No advertising or analytics cookies are used. Cloudflare Turnstile may use its own mechanisms for bot protection.</p>
+<h2>5. Sharing with third parties</h2>
+<p>Except as required by law, information is not shared for any other purpose. Reports are posted to the repository the reporter sent them to.</p>
+<h2>6. Retention</h2>
+<ul><li>Project information (repository name and key): kept in a disabled state after the App is uninstalled. Contact us to have it deleted.</li>
+<li>Pending reports (approval mode): until published or discarded, up to 14 days</li>
+<li>Duplicate-detection hashes: 24 hours</li>
+<li>Daily counts: the number of reports per key and day</li></ul>
+<h2>7. Contact</h2>
+<p>Please contact us via <a href="https://github.com/ninjin0802/posissue/issues">GitHub Issues</a>. If the matter is not suitable for a public issue, say so in the issue and we will tell you how to reach us.</p>
+<h2>8. Changes</h2>
+<p>This policy may be updated as needed. Important changes will be announced on this page.</p>
+<footer><a href="/?lang=en">Home</a><a href="/en/privacy">Privacy</a><a href="/en/terms">Terms</a><a href="/en/changelog">Changelog</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><a href="/privacy" hreflang="ja" lang="ja">日本語</a><span>© 2026 ninjin0802</span></footer></div></body></html>

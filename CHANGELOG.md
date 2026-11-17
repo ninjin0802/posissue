@@ -1,7 +1,7 @@
 # リリースノート
 
 PosIssue の変更履歴です。ホームページ版は https://posissue.2nj.lol/changelog 、各版の詳細は [GitHub Releases](https://github.com/ninjin0802/posissue/releases) にあります。
-（このファイルと `apps/hosted/public/changelog.html` は同じ内容です。片方を変えたら、もう片方も更新してください。）
+（このファイル、`apps/hosted/public/changelog.html`、英語版 `apps/hosted/public/en/changelog.html` は同じ内容です。変えたらすべて更新してください。）
 
 ## v1.2.0 — 2026-11-17
 

@@ -5,7 +5,7 @@ import {
 } from "@posissue/core";
 import { mount } from "posissue";
 import { createIssue, isOurUserToken, userInstallationRepos, userInstallations, userToken, verifyWebhook, type GitHubCreds } from "./github";
-import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow, type PendingItem } from "./pages";
+import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow, type Lang, type PendingItem } from "./pages";
 import { normalizeDailyLimit, normalizeOrigins, signSession, verifySession } from "./session";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
@@ -70,6 +70,16 @@ const newKey = () => {
 const sha256 = async (s: string) =>
   [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))]
     .map((b) => b.toString(16).padStart(2, "0")).join("");
+
+/** 表示言語：?lang= → クッキー pi_lang → ブラウザの言語（日本語以外は英語） */
+function pickLang(req: Request, url: URL): Lang {
+  const q = url.searchParams.get("lang");
+  if (q === "ja" || q === "en") return q;
+  const c = /(?:^|;\s*)pi_lang=(ja|en)/.exec(req.headers.get("cookie") ?? "")?.[1];
+  if (c === "ja" || c === "en") return c;
+  return /^ja\b/i.test(req.headers.get("accept-language") ?? "") ? "ja" : "en";
+}
+const langCookie = (lang: Lang) => `pi_lang=${lang}; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
 
 const splitOrigins = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 const origins = (p: Project) => splitOrigins(p.allowed_origins);
@@ -211,7 +221,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     }
     const nonce = crypto.randomUUID().replace(/-/g, "");
     const session = await signSession(env.SESSION_SECRET, rows.filter((r) => r.key && r.canEdit).map((r) => [r.repo, r.installationId!]));
-    return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, session, defaultDailyLimit: perDay, justInstalled: target !== "keys" }), {
+    return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, session, defaultDailyLimit: perDay, justInstalled: target !== "keys", lang: pickLang(req, url) }), {
       "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; connect-src 'self'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`,
       "cache-control": "no-store",
       "set-cookie": "pi_state=; Path=/setup; Max-Age=0; HttpOnly; Secure; SameSite=Lax", // 使い捨て
@@ -430,10 +440,13 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");
+        const lang = pickLang(req, url);
         return html(landingPage({
-          origin: url.origin, appSlug: env.GITHUB_APP_SLUG, demoKey: env.DEMO_KEY, nonce,
+          origin: url.origin, appSlug: env.GITHUB_APP_SLUG, demoKey: env.DEMO_KEY, nonce, lang,
           repoUrl: "https://github.com/ninjin0802/posissue",
         }), {
+          ...(url.searchParams.has("lang") ? { "set-cookie": langCookie(lang) } : {}),
+          vary: "accept-language, cookie",
           "content-security-policy": `default-src 'none'; script-src 'self' 'nonce-${nonce}'; style-src 'unsafe-inline'; frame-src 'self'; connect-src 'self'; img-src 'self'`,
         });
       }
