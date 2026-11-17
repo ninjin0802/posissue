@@ -189,6 +189,12 @@ h1{font-size:clamp(30px,4.6vw,52px);line-height:1.12;letter-spacing:-.03em;margi
 h1 span,h1 em{white-space:nowrap}h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .lead{font-size:18px;color:var(--muted);margin:0 0 30px;max-width:34em}
 .cta{display:flex;gap:12px;flex-wrap:wrap}
+.npm{display:inline-flex;align-items:center;gap:4px;margin-top:18px;padding:4px 4px 4px 16px;border-radius:12px;background:var(--code);color:var(--codefg);font:14px/1 ui-monospace,Menlo,monospace;max-width:100%}
+.npm code span{opacity:.5;margin-right:6px}
+.cpy{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--codefg);cursor:pointer;opacity:.75}
+.cpy:hover{opacity:1;background:rgba(255,255,255,.08)}.cpy.done{color:#4cd498;opacity:1}
+.cpy:focus-visible{outline:2px solid var(--accent)}
+.npmlink{font:600 12px/1 ui-sans-serif,system-ui,sans-serif;color:#ff8c8c;text-decoration:none;padding:8px 10px}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:600;text-decoration:none;font-size:15px;border:1.5px solid var(--line);background:var(--card)}
 .btn.p{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 24px rgba(91,91,214,.3)}
 @media (prefers-color-scheme:dark){.btn.p{color:#0b0b11}}
@@ -250,7 +256,10 @@ export function landingPage(o: { origin: string; appSlug: string; demoKey?: stri
     [t("Web サイト", "Website"), `<span class="c">&lt;!-- ${t("&lt;/body&gt; の前に 1 行", "One line before &lt;/body&gt;")} --&gt;</span>
 &lt;script src=<span class="s">"${o_}/widget.js"</span>
         data-key=<span class="s">"pk_xxx"</span> async&gt;&lt;/script&gt;`],
-    ["npm", `<span class="k">import</span> { init } <span class="k">from</span> <span class="s">"posissue"</span>;
+    ["npm", `<span class="c"># ${t("インストール", "Install")}</span>
+npm i posissue
+
+<span class="k">import</span> { init } <span class="k">from</span> <span class="s">"posissue"</span>;
 
 init({
   projectKey: <span class="s">"pk_xxx"</span>,
@@ -282,13 +291,14 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <h1>${t("<span>アカウントがなくても、</span><br><em>だれでも Issue を。</em>", "<span>No account needed.</span><br><em>Anyone can file an issue.</em>")}</h1>
 <p class="lead">${t("サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。", "Add one line to your site or app. Bug reports and feature requests from your users arrive in your repository as GitHub issues.")}</p>
 <div class="cta"><a class="btn p" href="${esc(install)}">${t("GitHub App をインストール →", "Install the GitHub App →")}</a><a class="btn" href="/admin">${t("管理画面", "Dashboard")}</a><a class="btn" href="${esc(o.repoUrl)}">${t("ソースを見る", "View source")}</a></div>
+<div class="npm"><code><span aria-hidden="true">$</span> npm i posissue</code><button type="button" class="cpy" data-copy="npm i posissue" aria-label="${t("コマンドをコピー", "Copy command")}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a href="https://www.npmjs.com/package/posissue" class="npmlink">npm ↗</a></div>
 </div><div class="demo">${demo}</div></div></header>
 
 <section id="features"><div class="w">
 <h2>${t("報告のハードルを、ゼロに。", "Zero friction for reporters.")}</h2><p class="sub">${t("GitHub に登録していない利用者の声も、取りこぼさずに集められます。", "Hear from users who don’t have a GitHub account, too.")}</p>
 <div class="grid">
 <div class="card"><div class="ic">🙋</div><h3>${t("アカウント不要", "No account needed")}</h3><p>${t("報告する人は GitHub に登録しなくても送れます。個人情報も集めません。", "Reporters don’t need a GitHub account, and no personal data is collected.")}</p></div>
-<div class="card"><div class="ic">🧩</div><h3>${t("1 行で導入", "One-line setup")}</h3><p>${t("script タグを貼るか init() を呼ぶだけ。アプリは WebView で URL を開くだけです。", "Paste a script tag or call init(). In apps, just open a URL in a WebView.")}</p></div>
+<div class="card"><div class="ic">🧩</div><h3>${t("1 行で導入", "One-line setup")}</h3><p>${t("script タグを貼るか、npm i posissue して init() を呼ぶだけ。アプリは WebView で URL を開くだけです。", "Paste a script tag, or npm i posissue and call init(). In apps, just open a URL in a WebView.")}</p></div>
 <div class="card"><div class="ic">📐</div><h3>${t("フォームは型で決まる", "Typed forms")}</h3><p>${t("FormTemplate を渡すと、画面・入力チェック・Issue 本文の形がそろって決まります。", "One FormTemplate defines the UI, the validation and the issue body — always in sync.")}</p></div>
 <div class="card"><div class="ic">🛡️</div><h3>${t("スパム対策つき", "Built-in spam protection")}</h3><p>${t("Turnstile、投稿数の制限、重複検出、@メンションの無効化を最初から備えています。承認モードも選べます。", "Turnstile, rate limits, duplicate detection and neutralized @mentions out of the box, plus an optional approval mode.")}</p></div>
 <div class="card"><div class="ic">🌗</div><h3>${t("きれいなフォーム", "A beautiful form")}</h3><p>${t("ライト/ダーク自動切替、日本語・英語対応。どのサイトにもなじみます。", "Automatic light/dark mode and Japanese/English. Fits any site.")}</p></div>
@@ -310,7 +320,10 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 <section><div class="w two"><div>
 <h2>${t("フォームは、型を書くだけ。", "Just write a type.")}</h2>
 <p class="sub">${t("項目の種類は text / textarea / select / checkbox。書き間違いはエディタが教えてくれて、起動時にもチェックされます。", "Fields can be text, textarea, select or checkbox. Your editor catches mistakes, and they are checked again at startup.")}</p>
-</div><pre class="solo"><span class="k">const</span> forms: FormTemplate[] = [{
+</div><pre class="solo"><span class="c"># ${t("セルフホスト", "Self-hosting")}</span>
+npm i @posissue/server
+
+<span class="k">const</span> forms: FormTemplate[] = [{
   kind: <span class="s">"bug"</span>,
   label: { en: <span class="s">"Bug"</span>, ja: <span class="s">"バグ報告"</span> },
   fields: [
@@ -342,6 +355,8 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 
 <footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><span class="fl"><a href="${docPath(o.lang, "changelog")}">${t("リリースノート", "Changelog")}</a><a href="${docPath(o.lang, "privacy")}">${t("プライバシーポリシー", "Privacy")}</a><a href="${docPath(o.lang, "terms")}">${t("利用規約", "Terms")}</a><a href="${esc(o.repoUrl)}">GitHub</a></span></div></footer>
 <script nonce="${o.nonce}">
+document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener("click",function(){
+navigator.clipboard.writeText(b.dataset.copy).then(function(){b.classList.add("done");setTimeout(function(){b.classList.remove("done")},1500)})})});
 document.querySelectorAll("[role=tab]").forEach(function(b){b.addEventListener("click",function(){
 document.querySelectorAll("[role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b)});
 document.querySelectorAll("[data-p]").forEach(function(p){p.hidden=p.dataset.p!==b.dataset.i})})});
