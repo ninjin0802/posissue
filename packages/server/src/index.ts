@@ -162,6 +162,10 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     if (target !== "keys" && (!Number.isInteger(one) || one <= 0)) {
       return html(messagePage("Error", "<p>installation_id がありません。</p>"), {}, 400);
     }
+    // GitHub から戻ってきたのにクッキーがない＝ブロックされている。やり直すと行き来が止まらないので案内を出す
+    if (!verified && code && state && !cookie) {
+      return html(messagePage("Cookie が必要です", `<p>ログインの確認に Cookie を使います。このサイト（posissue.2nj.lol）の Cookie を許可してから、<a href="/keys">もう一度お試しください</a>。</p>`), {}, 400);
+    }
     if (!verified) return startAuth(env, target);
     // 7.3: GitHub API を呼ぶのはここからなので、ここで IP ごとに絞る（認可画面へのリダイレクトは数えない）
     const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
