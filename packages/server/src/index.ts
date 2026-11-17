@@ -6,6 +6,7 @@ import {
 import { mount } from "posissue";
 import { createIssue, isOurUserToken, userInstallationRepos, userInstallations, userToken, verifyWebhook, type GitHubCreds } from "./github";
 import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow } from "./pages";
+import { normalizeDailyLimit, normalizeOrigins, signSession, verifySession } from "./session";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
 export { DEFAULT_FORMS } from "@posissue/core";
@@ -19,6 +20,8 @@ export interface Env {
   /** App の OAuth（/setup で持ち主を確かめる）。client id は公開してよい値 */
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  /** キー確認画面から設定を変えるときの署名用（4.6）。ランダムな長い文字列 */
+  SESSION_SECRET: string;
   GITHUB_WEBHOOK_SECRET: string;
   TURNSTILE_SITE_KEY: string;
   TURNSTILE_SECRET: string;
@@ -64,7 +67,8 @@ const sha256 = async (s: string) =>
   [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))]
     .map((b) => b.toString(16).padStart(2, "0")).join("");
 
-const origins = (p: Project) => p.allowed_origins.split(",").map((s) => s.trim()).filter(Boolean);
+const splitOrigins = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
+const origins = (p: Project) => splitOrigins(p.allowed_origins);
 
 export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
   const forms = config.forms ?? DEFAULT_FORMS;
@@ -188,8 +192,9 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       return html(messagePage("Error", "<p>GitHub との通信に失敗しました。時間をおいてお試しください。</p>"), {}, 502);
     }
     const nonce = crypto.randomUUID().replace(/-/g, "");
-    return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, justInstalled: target !== "keys" }), {
-      "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`,
+    const session = await signSession(env.SESSION_SECRET, rows.filter((r) => r.key).map((r) => r.repo));
+    return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, session, defaultDailyLimit: perDay, justInstalled: target !== "keys" }), {
+      "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; connect-src 'self'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`,
       "cache-control": "no-store",
       "set-cookie": "pi_state=; Path=/setup; Max-Age=0; HttpOnly; Secure; SameSite=Lax", // 使い捨て
     });
@@ -212,11 +217,36 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       for (const id of await userInstallations(token)) {
         for (const repo of (await userInstallationRepos(token, id)) ?? []) rows.push(await ensureProject(env, id, repo));
       }
-      return json({ ok: true, endpoint: new URL(req.url).origin, keys: rows.map((r) => ({ repo: r.repo, key: r.key, stopped: r.key === null })) });
+      return json({ ok: true, endpoint: new URL(req.url).origin, keys: rows.map((r) => ({ repo: r.repo, key: r.key, stopped: r.key === null, allowedOrigins: r.origins, dailyLimit: r.dailyLimit })) });
     } catch (e) {
       console.log(String(e));
       return json({ ok: false, error: "upstream_error" }, 502);
     }
+  }
+
+  /**
+   * 4.6: キー確認画面からの設定変更。本文の session（署名付き・30 分）に含まれるリポジトリだけ変えられる。
+   * クッキーを使わないので CSRF の心配がない。同じオリジンからだけ受け付ける。
+   */
+  async function apiSettings(req: Request, env: Env): Promise<Response> {
+    const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
+    if (req.headers.get("origin") !== new URL(req.url).origin) return json({ ok: false, error: "forbidden" }, 403);
+    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+    if (!(await env.RL_IP.limit({ key: `settings:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
+    const text = await req.text();
+    if (text.length > 4000) return json({ ok: false, error: "invalid_input" }, 400);
+    let b: { session?: unknown; repo?: unknown; allowedOrigins?: unknown; dailyLimit?: unknown };
+    try { b = JSON.parse(text); } catch { return json({ ok: false, error: "invalid_input" }, 400); }
+    const repos = await verifySession(env.SESSION_SECRET, b.session);
+    if (!repos) return json({ ok: false, error: "session_expired" }, 401);
+    if (typeof b.repo !== "string" || !repos.includes(b.repo)) return json({ ok: false, error: "forbidden" }, 403);
+    const allowed = normalizeOrigins(b.allowedOrigins);
+    const limit = normalizeDailyLimit(b.dailyLimit);
+    if (!allowed || limit === undefined) return json({ ok: false, error: "invalid_input" }, 400);
+    const r = await env.DB.prepare("UPDATE projects SET allowed_origins = ?, daily_limit = ? WHERE repo = ? AND banned = 0")
+      .bind(allowed.join(","), limit, b.repo).run();
+    if (!r.meta.changes) return json({ ok: false, error: "forbidden" }, 403);
+    return json({ ok: true, allowedOrigins: allowed, dailyLimit: limit });
   }
 
   /** GitHub の認可画面へ送る。state = ランダム値.対象 を、同じ値の短命クッキーと組にする。 */
@@ -237,17 +267,18 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
 
   /** 7.4: 有効なキーがあれば再利用、停止中なら新しいキーに置き換える。運営が止めたものは復活させない。 */
   async function ensureProject(env: Env, id: number, repo: string): Promise<KeyRow> {
-    const cur = await env.DB.prepare("SELECT key, active, banned FROM projects WHERE repo = ?").bind(repo).first<{ key: string; active: number; banned: number }>();
-    if (cur?.banned) return { repo, key: null };
+    const cur = await env.DB.prepare("SELECT key, active, banned, allowed_origins, daily_limit FROM projects WHERE repo = ?").bind(repo)
+      .first<{ key: string; active: number; banned: number; allowed_origins: string; daily_limit: number | null }>();
+    if (cur?.banned) return { repo, key: null, origins: [], dailyLimit: null };
     if (!cur || !cur.active) {
       const key = newKey();
       await env.DB.prepare(
         "INSERT INTO projects (key, installation_id, repo) VALUES (?, ?, ?) ON CONFLICT (repo) DO UPDATE SET key = excluded.key, installation_id = excluded.installation_id, active = 1",
       ).bind(key, id, repo).run();
-      return { repo, key };
+      return { repo, key, origins: cur ? splitOrigins(cur.allowed_origins) : [], dailyLimit: cur?.daily_limit ?? null };
     }
     await env.DB.prepare("UPDATE projects SET installation_id = ? WHERE repo = ?").bind(id, repo).run();
-    return { repo, key: cur.key };
+    return { repo, key: cur.key, origins: splitOrigins(cur.allowed_origins), dailyLimit: cur.daily_limit };
   }
 
 
@@ -326,6 +357,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       // あとからキーを確認するページ。GitHub の認可画面へ送り、戻り先の /setup で一覧を出す
       if (req.method === "GET" && path === "/keys") return startAuth(env, "keys");
       if (req.method === "GET" && path === "/api/keys") return apiKeys(req, env);
+      if (req.method === "POST" && path === "/api/settings") return apiSettings(req, env);
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");

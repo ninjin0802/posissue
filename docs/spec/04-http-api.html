@@ -15,6 +15,7 @@
 <tr><td>GET</td><td><code>/</code></td><td>ホームページ（紹介・導入方法・App インストール）。Env <code>DEMO_KEY</code> があれば、PosIssue 自身のリポジトリ宛てのフォームを実物のデモとして埋め込み、ウィジェットも置く</td></tr>
 <tr><td>GET</td><td><code>/keys</code></td><td>作者があとから自分のキーを確認するページ。GitHub の認可画面へ送り（<code>state=keys</code>）、戻り先の <code>/setup</code> で、ログインしたユーザーがアクセスできる全インストールのリポジトリとキーを一覧表示する（コピーボタン・貼り付け用コード付き）</td></tr>
 <tr><td>GET</td><td><code>/setup</code></td><td>App インストール後のコールバック。キーを発行して表示</td></tr>
+<tr><td>POST</td><td><code>/api/settings</code></td><td>作者の設定変更（4.6）</td></tr>
 <tr><td>POST</td><td><code>/webhook</code></td><td>GitHub App の Webhook</td></tr>
 </table>
 <h2>4.1 GET /r/:projectKey</h2>
@@ -45,6 +46,14 @@
 <li>応答：<code>{ ok: true, endpoint, keys: [{ repo, key, stopped }] }</code>。失敗：401 unauthorized / 429 rate_limited / 502 upstream_error。</li>
 </ul>
 <p>CLI：<code>npx github:ninjin0802/posissue keys [--json] [--endpoint URL]</code>（リポジトリの <code>cli/posissue.mjs</code>、依存なし、Node 18+）。案内は標準エラー、結果は標準出力に出す。</p>
+<h2>4.6 POST /api/settings（作者の設定変更、v1.1）</h2>
+<p>キー確認画面（4.3）の「設定」から、リポジトリごとに次を変えられる。</p>
+<ul>
+<li><strong>埋め込みを許すサイト</strong>（<code>allowed_origins</code>）：オリジン（<code>https://example.com</code> の形）だけ、最大 10。空なら制限なし。フォームページの CSP <code>frame-ancestors</code> と、API の Origin 検査に使う（7.1 #6、7.3）。</li>
+<li><strong>1 日の上限</strong>（<code>daily_limit</code>）：1〜1000 の整数。<code>null</code> で既定値（9.2）に戻す。</li>
+</ul>
+<p>認可：キー確認画面を出すときに、そのユーザーが変更してよいリポジトリの一覧と期限（30 分）を HMAC-SHA256 で署名したトークン（<code>session</code>、鍵は Env <code>SESSION_SECRET</code>）を画面に埋め込む。設定の送信は本文にこのトークンを入れ、サーバーは署名・期限・対象リポジトリを確かめる（MUST）。クッキーを使わないので CSRF の対象にならない。加えて同じオリジンからの要求だけを受け付け、IP ごとに回数を制限する。運営が停止したリポジトリは変更できない。</p>
+<p>要求：<code>{ session, repo, allowedOrigins: string[], dailyLimit: number | null }</code>。応答：<code>{ ok: true, allowedOrigins, dailyLimit }</code> ／ 400 invalid_input ／ 401 session_expired ／ 403 forbidden ／ 429 rate_limited。</p>
 <h2>4.4 POST /webhook</h2>
 <p><code>X-Hub-Signature-256</code> を HMAC-SHA256 で検証する（MUST）。扱うイベント：<code>installation.deleted</code> → 該当プロジェクトを全停止、<code>installation_repositories.removed</code> → 該当リポジトリのプロジェクトを停止。</p>
 

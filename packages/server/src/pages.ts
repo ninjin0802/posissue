@@ -316,12 +316,13 @@ ${o.demoKey ? `<script src="/widget.js" data-key="${esc(o.demoKey)}" async></scr
 // docs/images/icon.svg と同じ内容（README 用と配信用）。アイコンを変えるときは両方を更新する
 export const ICON_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" role=\"img\" aria-label=\"PosIssue\">\n  <defs>\n    <linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#6d6af0\"/>\n      <stop offset=\".55\" stop-color=\"#7c5ce6\"/>\n      <stop offset=\"1\" stop-color=\"#c25bd6\"/>\n    </linearGradient>\n    <radialGradient id=\"glow\" cx=\".28\" cy=\".2\" r=\".75\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".35\"/>\n      <stop offset=\"1\" stop-color=\"#fff\" stop-opacity=\"0\"/>\n    </radialGradient>\n    <filter id=\"sh\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"150%\">\n      <feDropShadow dx=\"0\" dy=\"10\" stdDeviation=\"14\" flood-color=\"#2a1170\" flood-opacity=\".35\"/>\n    </filter>\n  </defs>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#bg)\"/>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#glow)\"/>\n  <!-- 吹き出し（フィードバック） -->\n  <path filter=\"url(#sh)\" fill=\"#fff\"\n    d=\"M146 112h220c41 0 74 33 74 74v118c0 41-33 74-74 74H262l-74 62c-9 8-22 1-22-10v-52h-20c-41 0-74-33-74-74V186c0-41 33-74 74-74z\"/>\n  <!-- Issue のマーク（開いた Issue の丸） -->\n  <circle cx=\"256\" cy=\"245\" r=\"54\" fill=\"none\" stroke=\"url(#bg)\" stroke-width=\"22\"/>\n  <circle cx=\"256\" cy=\"245\" r=\"19\" fill=\"url(#bg)\"/>\n</svg>";
 
-export interface KeyRow { repo: string; key: string | null } // key=null は運営が停止中
+/** key=null は運営が停止中。origins は埋め込みを許すサイト（空なら制限なし）、dailyLimit は 1 日の上限（null は既定値） */
+export interface KeyRow { repo: string; key: string | null; origins: string[]; dailyLimit: number | null }
 
 const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
 
 /** ログインした作者に、自分のリポジトリの projectKey と貼り付け用コードを見せる（/setup・/keys）。 */
-export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; justInstalled: boolean }) {
+export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; session: string; defaultDailyLimit: number; justInstalled: boolean }) {
   const install = `https://github.com/apps/${encodeURIComponent(o.appSlug)}/installations/new`;
   const copyBtn = (v: string, label: string) =>
     `<button type="button" class="cp" data-copy="${esc(v)}" aria-label="${esc(label)}をコピー">${COPY_ICON}<span>コピー</span></button>`;
@@ -337,7 +338,16 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
 <p class="lbl">サイトに貼る（&lt;/body&gt; の前）</p><div class="row"><code>${esc(tag)}</code>${copyBtn(tag, "script タグ")}</div>
 <p class="lbl">アプリの WebView で開く URL</p><div class="row"><code>${esc(app)}</code>${copyBtn(app, "URL")}</div>
 <p class="lbl"><a href="${esc(app)}" target="_blank" rel="noopener">フォームを開いて確かめる ↗</a></p>
-</details></article>`;
+</details>
+<details><summary>設定</summary>
+<form class="set" data-repo="${esc(r.repo)}">
+<label class="lbl" for="o_${esc(r.key)}">埋め込みを許すサイト（1 行に 1 つ、最大 10）</label>
+<textarea id="o_${esc(r.key)}" name="origins" rows="3" placeholder="https://example.com" spellcheck="false">${esc(r.origins.join("\n"))}</textarea>
+<p class="hint">空にすると、どのサイトにも埋め込めます。アプリの WebView から開く場合は影響しません。</p>
+<label class="lbl" for="l_${esc(r.key)}">1 日に受け付ける件数の上限（1〜1000）</label>
+<input id="l_${esc(r.key)}" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="既定: ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}">
+<div class="act"><button type="submit" class="save">保存</button><span class="st" role="status" aria-live="polite"></span></div>
+</form></details></article>`;
   }).join("");
   const empty = `<div class="card empty"><p>まだ PosIssue を入れたリポジトリがありません。</p><a class="btn" href="${esc(install)}">GitHub App をインストール</a></div>`;
   return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -360,6 +370,14 @@ h1{font-size:24px;margin:18px 0 4px}.lead{color:var(--muted);margin:0 0 22px}
 details{margin-top:12px}summary{cursor:pointer;color:var(--accent);font-size:14px;font-weight:600}
 .lbl{font-size:12px;color:var(--muted);margin:12px 0 6px}.lbl a{color:var(--accent)}
 .off{opacity:.7}.stop{margin:0;color:var(--err);font-size:14px}
+.set label{display:block}
+.set textarea,.set input{width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--field);color:var(--fg);font:13px/1.5 ui-monospace,Menlo,monospace}
+.set input{max-width:200px;font-family:inherit;font-size:14px}
+.set textarea:focus,.set input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.hint{font-size:12px;color:var(--muted);margin:4px 0 0}
+.act{display:flex;align-items:center;gap:12px;margin-top:12px}
+.save{border:0;background:var(--accent);color:var(--accent-fg);border-radius:10px;padding:9px 18px;font:600 14px/1 inherit;font-family:inherit;cursor:pointer}.save:disabled{opacity:.6}
+.st{font-size:13px;color:var(--muted)}.st.err{color:var(--err)}.st.ok{color:var(--ok)}
 .empty{text-align:center;padding:32px 18px}.empty p{color:var(--muted);margin:0 0 16px}
 .btn{display:inline-block;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:600;padding:10px 18px;border-radius:10px}
 .foot{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-top:22px;font-size:14px}.foot a{color:var(--accent)}
@@ -376,5 +394,15 @@ document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener(
 var s=b.querySelector("span");navigator.clipboard.writeText(b.dataset.copy).then(function(){
 b.classList.add("done");s.textContent="コピー済み";setTimeout(function(){b.classList.remove("done");s.textContent="コピー"},1600)},
 function(){s.textContent="選択してコピーしてください"})})});
+var SESSION=${JSON.stringify(o.session)};
+var ERR={invalid_input:"入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。",session_expired:"時間が経ちました。ページを開き直してください。",forbidden:"このリポジトリは変更できません。",rate_limited:"少し待ってからもう一度お試しください。"};
+document.querySelectorAll("form.set").forEach(function(f){f.addEventListener("submit",function(e){e.preventDefault();
+var st=f.querySelector(".st"),btn=f.querySelector(".save"),lim=f.elements.limit.value.trim();
+var origins=f.elements.origins.value.split("\n").map(function(x){return x.trim()}).filter(Boolean);
+btn.disabled=true;st.className="st";st.textContent="保存しています…";
+fetch("/api/settings",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({session:SESSION,repo:f.dataset.repo,allowedOrigins:origins,dailyLimit:lim?Number(lim):null})})
+.then(function(r){return r.json()}).then(function(r){if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\n");st.className="st ok";st.textContent="保存しました"}
+else{st.className="st err";st.textContent=ERR[r.error]||"保存できませんでした。"}})
+.catch(function(){st.className="st err";st.textContent="通信に失敗しました。"}).finally(function(){btn.disabled=false})})});
 </script></body></html>`;
 }
