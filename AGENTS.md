@@ -28,7 +28,7 @@ cd apps/hosted && npx wrangler dev   # .dev.vars にテスト用の値が必要�
 
 ## キーの取得（CLI）
 
-`node cli/posissue.mjs keys --json`（公開後は `npx github:ninjin0802/posissue keys --json`）。GitHub のデバイスフローで、表示された URL とコードを**ユーザーに渡し、ログインと許可はユーザーにやってもらう**。エージェントがログインしない。
+`node cli/posissue.mjs keys --json`（公開後は `npx posissue keys --json`）。GitHub のデバイスフローで、表示された URL とコードを**ユーザーに渡し、ログインと許可はユーザーにやってもらう**。エージェントがログインしない。
 
 ## 守ること
 

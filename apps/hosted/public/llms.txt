@@ -7,7 +7,7 @@
 1. The maintainer must install the GitHub App on the target repository: https://github.com/apps/posissue/installations/new
    (This is a human step: it grants permissions on GitHub. Ask the user to do it.)
 2. Get the project key (`pk_` + 24 alphanumerics). It is a public value (it is embedded in web pages), not a secret. Either:
-   - Run `npx github:ninjin0802/posissue keys --json` (Node 18+). It prints a GitHub URL and a one-time code to stderr.
+   - Run `npx posissue keys --json` (Node 18+). It prints a GitHub URL and a one-time code to stderr.
      Show them to the user and let the USER open the URL, enter the code and approve in their browser. Never do the GitHub login yourself.
      stdout then returns JSON: `{ "ok": true, "endpoint": "...", "keys": [{ "repo": "owner/name", "key": "pk_...", "stopped": false }] }`. Pick the key for the target repo.
    - Or ask the user to open https://posissue.2nj.lol/admin and paste the key.
@@ -25,8 +25,15 @@ Optional attributes: `data-lang="ja|en"`, `data-position="bottom-right|bottom-le
 
 ### npm (bundled apps: React, Vue, Svelte, etc.)
 
-The npm package `posissue` is not published yet. Until then use the script tag above (e.g. in `index.html`, or Next.js `<Script src=... data-key=... />`).
-Planned API: `import { init } from "posissue"; const w = init({ projectKey, lang?, position?, label?, kinds?, meta? }); w.open(); w.close(); w.destroy();`
+`npm i posissue`, then:
+
+```ts
+import { init } from "posissue";
+const w = init({ projectKey: "pk_...", lang: "en" }); // lang?, position?, label?, kinds?, meta?, endpoint?
+// w.open(); w.close(); w.destroy();
+```
+
+Call `init` only in the browser (e.g. inside `useEffect` in React / Next.js).
 
 ### Native / mobile / desktop apps (iOS, Android, Flutter, React Native, Electron)
 
@@ -65,4 +72,4 @@ Public repositories default to approval mode: `POST /api/report` returns `202 { 
 ## Self-hosting and source
 
 - Source and spec (single source of truth: `docs/spec/`): https://github.com/ninjin0802/posissue
-- Self-host on your own Cloudflare account with `@posissue/server` (`createHandler({ forms })`); forms are defined by the typed `FormTemplate`. See the README and `docs/spec/09-operations.html`.
+- Self-host on your own Cloudflare account with `npm i @posissue/server` (`createHandler({ forms })`); forms are defined by the typed `FormTemplate`. See the README and `docs/spec/09-operations.html`.

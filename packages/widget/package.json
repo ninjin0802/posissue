@@ -30,7 +30,7 @@
     }
   },
   "bin": {
-    "posissue": "./cli/posissue.mjs"
+    "posissue": "cli/posissue.mjs"
   },
   "files": [
     "dist",

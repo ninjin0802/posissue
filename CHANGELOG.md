@@ -22,6 +22,7 @@ PosIssue の変更履歴です。ホームページ版は https://posissue.2nj.l
 
 ### 開発
 - サーバーの流れ（報告・スパム対策・承認・設定・OAuth・言語）の自動テストを追加しました（27 件）。
+- **npm で公開しました**：[`posissue`](https://www.npmjs.com/package/posissue)（ウィジェットと CLI。`npx posissue keys`）、[`@posissue/server`](https://www.npmjs.com/package/@posissue/server)（セルフホスト）、[`@posissue/core`](https://www.npmjs.com/package/@posissue/core)。
 
 ## v1.2.0 — 2026-11-17
 
