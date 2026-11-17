@@ -99,6 +99,7 @@ var T={title:["Title","タイトル"],send:["Send report","送信する"],thanks
 note:["Your report, the page URL and browser info will be posted as an issue in this repository.","送信した内容と、ページの URL・ブラウザの情報が、このリポジトリの Issue に掲載されます。"],
 privacy:["Privacy","プライバシー"],
 foot:["No GitHub account needed · Powered by PosIssue","GitHub アカウントは不要です · Powered by PosIssue"],h:["Send feedback","フィードバックを送る"],
+held:["It will be published as an issue after the maintainer reviews it.","作者が確認したあとに、Issue として公開されます。"],
 sent:["Your report was posted as issue #","Issue #"],sent2:[".","として登録されました。"],
 required:["Please fill in the required fields.","必須項目を入力してください。"],
 captcha_failed:["Verification failed. Please try again.","認証に失敗しました。もう一度お試しください。"],
@@ -150,7 +151,8 @@ var btn=f.querySelector(".send");btn.disabled=true;btn.classList.add("busy");say
 fetch("/api/report",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({
 projectKey:C.key,kind:cur.kind,title:title.value,fields:fields,hp:d.get("hp")||"",meta:meta,
 turnstileToken:d.get("cf-turnstile-response")||"",elapsedMs:Date.now()-t0})})
-.then(function(r){return r.json()}).then(function(r){if(r.ok){f.hidden=true;$("done").hidden=false;
+.then(function(r){return r.json()}).then(function(r){if(r.ok&&r.pending){f.hidden=true;$("done").hidden=false;$("doneText").textContent=t("held");post("posissue:done",{pending:true});return}
+if(r.ok){f.hidden=true;$("done").hidden=false;
 var p=$("doneText");p.textContent=t("sent");var a=el("a",{href:r.issueUrl,target:"_blank",rel:"noopener",textContent:String(r.issueNumber)});p.append(a,document.createTextNode(t("sent2")));
 post("posissue:done",{issueNumber:r.issueNumber})}
 else{say(T[r.error]?r.error:"upstream_error",true);window.turnstile&&turnstile.reset()}})
@@ -248,12 +250,12 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <meta property="og:image:alt" content="PosIssue — アカウントがなくても、だれでも Issue を。">
 <meta name="twitter:card" content="summary_large_image"><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly docs"><style>${LANDING_STYLE}</style></head><body>
 <nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
-<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a href="/keys">キーを確認</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
+<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a href="/admin">管理画面</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
 <header class="hero"><div class="w"><div>
 <img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(91,91,214,.35))"><span class="pill">OSS のための報告ウィジェット</span>
 <h1><span>アカウントがなくても、</span><br><em>だれでも Issue を。</em></h1>
 <p class="lead">サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。</p>
-<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="/keys">キーを確認</a><a class="btn" href="${esc(o.repoUrl)}">ソースを見る</a></div>
+<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="/admin">管理画面</a><a class="btn" href="${esc(o.repoUrl)}">ソースを見る</a></div>
 </div><div class="demo">${demo}</div></div></header>
 
 <section id="features"><div class="w">
@@ -300,7 +302,7 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 
 <section><div class="w"><div class="final">
 <h2>利用者の声を、もっと近くに。</h2><p class="sub">無料で、いますぐ始められます。</p>
-<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
+<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="/admin">管理画面</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
 </div></div></section>
 
 <footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><span class="fl"><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="${esc(o.repoUrl)}">GitHub</a></span></div></footer>
@@ -317,7 +319,12 @@ ${o.demoKey ? `<script src="/widget.js" data-key="${esc(o.demoKey)}" async></scr
 export const ICON_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" role=\"img\" aria-label=\"PosIssue\">\n  <defs>\n    <linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#6d6af0\"/>\n      <stop offset=\".55\" stop-color=\"#7c5ce6\"/>\n      <stop offset=\"1\" stop-color=\"#c25bd6\"/>\n    </linearGradient>\n    <radialGradient id=\"glow\" cx=\".28\" cy=\".2\" r=\".75\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".35\"/>\n      <stop offset=\"1\" stop-color=\"#fff\" stop-opacity=\"0\"/>\n    </radialGradient>\n    <filter id=\"sh\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"150%\">\n      <feDropShadow dx=\"0\" dy=\"10\" stdDeviation=\"14\" flood-color=\"#2a1170\" flood-opacity=\".35\"/>\n    </filter>\n  </defs>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#bg)\"/>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#glow)\"/>\n  <!-- 吹き出し（フィードバック） -->\n  <path filter=\"url(#sh)\" fill=\"#fff\"\n    d=\"M146 112h220c41 0 74 33 74 74v118c0 41-33 74-74 74H262l-74 62c-9 8-22 1-22-10v-52h-20c-41 0-74-33-74-74V186c0-41 33-74 74-74z\"/>\n  <!-- Issue のマーク（開いた Issue の丸） -->\n  <circle cx=\"256\" cy=\"245\" r=\"54\" fill=\"none\" stroke=\"url(#bg)\" stroke-width=\"22\"/>\n  <circle cx=\"256\" cy=\"245\" r=\"19\" fill=\"url(#bg)\"/>\n</svg>";
 
 /** key=null は運営が停止中。origins は埋め込みを許すサイト（空なら制限なし）、dailyLimit は 1 日の上限（null は既定値） */
-export interface KeyRow { repo: string; key: string | null; origins: string[]; dailyLimit: number | null; canEdit?: boolean; installationId?: number }
+export interface PendingItem { id: string; title: string; body: string; createdAt: number }
+export interface KeyRow {
+  repo: string; key: string | null; origins: string[]; dailyLimit: number | null;
+  approval: boolean; // true = 承認してから起票（4.7）
+  canEdit?: boolean; installationId?: number; pending?: PendingItem[];
+}
 
 const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
 
@@ -331,8 +338,15 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
       return `<article class="k off"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><p class="stop">このリポジトリは運営により停止されています。</p></article>`;
     }
     const tag = `<script src="${o.origin}/widget.js" data-key="${r.key}" async></script>`;
+    const pend = r.pending ?? [];
+    const pendingHtml = r.canEdit && (r.approval || pend.length) ? `<details class="pend"${pend.length ? " open" : ""}><summary>承認待ち <b class="cnt">${pend.length}</b> 件</summary>
+${pend.length ? pend.map((x) => `<div class="pi" data-id="${esc(x.id)}" data-repo="${esc(r.repo)}">
+<div class="pt">${esc(x.title)}</div><div class="pm">${esc(new Date(x.createdAt * 1000).toISOString().slice(0, 16).replace("T", " "))} UTC</div>
+<details><summary>内容を見る</summary><pre class="pb">${esc(x.body)}</pre></details>
+<div class="pa"><button type="button" class="ap" data-action="approve">起票する</button><button type="button" class="rj" data-action="reject">捨てる</button><span class="st" role="status" aria-live="polite"></span></div></div>`).join("")
+  : `<p class="hint">承認待ちの報告はありません。届いた報告は 14 日で自動的に消えます。</p>`}</details>` : "";
     const app = `${o.origin}/r/${r.key}`;
-    return `<article class="k"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
+    return `<article class="k"><h2>${GH_ICON}<span>${esc(r.repo)}</span>${r.approval ? `<span class="tag">承認モード</span>` : ""}</h2>
 <div class="row"><code class="key">${esc(r.key)}</code>${copyBtn(r.key, "キー")}</div>
 <details><summary>貼り付け用のコード</summary>
 <p class="lbl">サイトに貼る（&lt;/body&gt; の前）</p><div class="row"><code>${esc(tag)}</code>${copyBtn(tag, "script タグ")}</div>
@@ -346,12 +360,16 @@ ${r.canEdit ? `<details><summary>設定</summary>
 <p class="hint">空にすると、どのサイトにも埋め込めます。アプリの WebView から開く場合は影響しません。</p>
 <label class="lbl" for="l_${esc(r.key)}">1 日に受け付ける件数の上限（1〜1000）</label>
 <input id="l_${esc(r.key)}" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="既定: ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}">
+<fieldset class="mode"><legend class="lbl">届いた報告の扱い</legend>
+<label><input type="radio" name="approval" value="1"${r.approval ? " checked" : ""}> 承認してから起票する <span class="hint">（公開リポジトリのおすすめ）</span></label>
+<label><input type="radio" name="approval" value="0"${r.approval ? "" : " checked"}> すぐに起票する</label>
+</fieldset>
 <div class="act"><button type="submit" class="save">保存</button><span class="st" role="status" aria-live="polite"></span></div>
-</form></details>` : `<p class="hint">設定の変更は、このリポジトリの管理者だけができます。</p>`}</article>`;
+</form></details>${pendingHtml}` : `<p class="hint">設定の変更は、このリポジトリの管理者だけができます。</p>`}</article>`;
   }).join("");
   const empty = `<div class="card empty"><p>まだ PosIssue を入れたリポジトリがありません。</p><a class="btn" href="${esc(install)}">GitHub App をインストール</a></div>`;
   return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark"><meta name="robots" content="noindex"><title>あなたのキー | PosIssue</title>
+<meta name="color-scheme" content="light dark"><meta name="robots" content="noindex"><title>管理画面 | PosIssue</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml"><style>${STYLE}
 .wrap{max-width:680px}
 .top{display:flex;align-items:center;gap:12px;margin-bottom:6px}.top img{width:40px;height:40px}
@@ -378,13 +396,22 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--accent);font-size:14p
 .act{display:flex;align-items:center;gap:12px;margin-top:12px}
 .save{border:0;background:var(--accent);color:var(--accent-fg);border-radius:10px;padding:9px 18px;font:600 14px/1 inherit;font-family:inherit;cursor:pointer}.save:disabled{opacity:.6}
 .st{font-size:13px;color:var(--muted)}.st.err{color:var(--err)}.st.ok{color:var(--ok)}
+.mode{border:0;padding:0;margin:12px 0 0}.mode label{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0}.mode input{accent-color:var(--accent)}
+.tag{margin-left:auto;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:999px}
+.pend{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}.cnt{color:var(--accent)}
+.pi{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;background:var(--field)}
+.pt{font-weight:600;font-size:14px;word-break:break-word}.pm{font-size:12px;color:var(--muted)}
+.pb{white-space:pre-wrap;word-break:break-word;font:12.5px/1.6 ui-monospace,Menlo,monospace;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto}
+.pa{display:flex;gap:8px;align-items:center;margin-top:10px}
+.ap,.rj{border:1.5px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:7px 14px;font:600 13px/1 inherit;font-family:inherit;cursor:pointer}
+.ap{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}.ap:disabled,.rj:disabled{opacity:.6}
 .empty{text-align:center;padding:32px 18px}.empty p{color:var(--muted);margin:0 0 16px}
 .btn{display:inline-block;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:600;padding:10px 18px;border-radius:10px}
 .foot{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-top:22px;font-size:14px}.foot a{color:var(--accent)}
 </style></head><body><div class="wrap">
 <div class="top"><a href="/"><img src="/icon.svg" alt="" width="40" height="40">PosIssue</a></div>
-<h1>あなたのウィジェットキー</h1>
-<p class="lead">GitHub アカウントで確認できた、あなたがアクセスできるリポジトリだけを表示しています。キーはサイトやアプリに載せる公開の値です。</p>
+<h1>管理画面</h1>
+<p class="lead">GitHub アカウントで確認できた、あなたがアクセスできるリポジトリだけを表示しています。キーの確認、設定の変更、承認待ちの報告の処理ができます。キーはサイトやアプリに載せる公開の値です。</p>
 ${o.justInstalled ? `<div class="ok" role="status">✅ インストールが完了しました。下のコードをサイトに貼るだけで使えます。</div>` : ""}
 ${o.rows.length ? cards : empty}
 <div class="foot"><a href="${esc(install)}">リポジトリを追加・変更する</a><a href="/">トップへ戻る</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a></div>
@@ -400,9 +427,18 @@ document.querySelectorAll("form.set").forEach(function(f){f.addEventListener("su
 var st=f.querySelector(".st"),btn=f.querySelector(".save"),lim=f.elements.limit.value.trim();
 var origins=f.elements.origins.value.split("\n").map(function(x){return x.trim()}).filter(Boolean);
 btn.disabled=true;st.className="st";st.textContent="保存しています…";
-fetch("/api/settings",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({session:SESSION,repo:f.dataset.repo,allowedOrigins:origins,dailyLimit:lim?Number(lim):null})})
+fetch("/api/settings",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({session:SESSION,repo:f.dataset.repo,allowedOrigins:origins,dailyLimit:lim?Number(lim):null,approval:f.querySelector("[name=approval]:checked").value==="1"})})
 .then(function(r){return r.json()}).then(function(r){if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\n");st.className="st ok";st.textContent="保存しました"}
 else{st.className="st err";st.textContent=ERR[r.error]||"保存できませんでした。"}})
 .catch(function(){st.className="st err";st.textContent="通信に失敗しました。"}).finally(function(){btn.disabled=false})})});
+ERR.not_found="すでに処理されています。";ERR.upstream_error="GitHub への起票に失敗しました。時間をおいてお試しください。";
+document.querySelectorAll(".pi [data-action]").forEach(function(b){b.addEventListener("click",function(){
+var it=b.closest(".pi"),st=it.querySelector(".st"),bs=it.querySelectorAll("button[data-action]");bs.forEach(function(x){x.disabled=true});st.className="st";st.textContent="処理しています…";
+fetch("/api/pending",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({session:SESSION,repo:it.dataset.repo,id:it.dataset.id,action:b.dataset.action})})
+.then(function(r){return r.json()}).then(function(r){if(r.ok){st.className="st ok";st.textContent="";
+if(r.issueUrl){var a=document.createElement("a");a.href=r.issueUrl;a.target="_blank";a.rel="noopener";a.textContent="Issue #"+r.issueNumber+" を作成しました";st.append(a)}else st.textContent="捨てました";
+var c=it.closest(".pend").querySelector(".cnt");c.textContent=Math.max(0,Number(c.textContent)-1)}
+else{st.className="st err";st.textContent=ERR[r.error]||"処理できませんでした。";bs.forEach(function(x){x.disabled=false})}})
+.catch(function(){st.className="st err";st.textContent="通信に失敗しました。";bs.forEach(function(x){x.disabled=false})})})});
 </script></body></html>`;
 }

@@ -10,7 +10,7 @@
    - Run `npx github:ninjin0802/posissue keys --json` (Node 18+). It prints a GitHub URL and a one-time code to stderr.
      Show them to the user and let the USER open the URL, enter the code and approve in their browser. Never do the GitHub login yourself.
      stdout then returns JSON: `{ "ok": true, "endpoint": "...", "keys": [{ "repo": "owner/name", "key": "pk_...", "stopped": false }] }`. Pick the key for the target repo.
-   - Or ask the user to open https://posissue.2nj.lol/keys and paste the key.
+   - Or ask the user to open https://posissue.2nj.lol/admin and paste the key.
 3. Add the widget. Choose ONE:
 
 ### Website (plain HTML, any framework)
@@ -46,6 +46,10 @@ If the site has a strict CSP, add `https://posissue.2nj.lol` to `script-src` and
 ## What the maintainer receives
 
 An issue titled `[Bug] ...` / `[Feature] ...` / `[Feedback] ...` with labels `via-widget` and `bug` / `enhancement` / `feedback`, the form answers as `### headings`, and a collapsible environment table (page URL without query, user agent, language, custom meta). Mentions (`@user`) and `#123` references are neutralized. To forward issues elsewhere (Discord, Slack), use a normal GitHub repository webhook on the Issues event and filter on the `via-widget` label.
+
+## Approval mode
+
+Public repositories default to approval mode: `POST /api/report` returns `202 { ok: true, pending: true }` and the issue is created only after the maintainer approves it at https://posissue.2nj.lol/admin. Private repositories create issues immediately. The maintainer can switch the mode per repository in the settings on that page.
 
 ## Limits
 

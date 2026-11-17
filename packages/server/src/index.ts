@@ -5,7 +5,7 @@ import {
 } from "@posissue/core";
 import { mount } from "posissue";
 import { createIssue, isOurUserToken, userInstallationRepos, userInstallations, userToken, verifyWebhook, type GitHubCreds } from "./github";
-import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow } from "./pages";
+import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow, type PendingItem } from "./pages";
 import { normalizeDailyLimit, normalizeOrigins, signSession, verifySession } from "./session";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
@@ -14,6 +14,8 @@ export { DEFAULT_FORMS } from "@posissue/core";
 export interface Env {
   DB: D1Database;
   RL_IP: RateLimit;
+  /** 作者向けの操作（/setup・/api/keys・/api/settings・/api/pending）用。報告より緩い制限 */
+  RL_ADMIN: RateLimit;
   GITHUB_APP_ID: string;
   GITHUB_APP_PRIVATE_KEY: string;
   GITHUB_APP_SLUG: string;
@@ -38,7 +40,9 @@ export interface ServerConfig {
   maxUrls?: number;
 }
 
-interface Project { key: string; installation_id: number; repo: string; allowed_origins: string; daily_limit: number | null; active: number }
+interface Project { key: string; installation_id: number; repo: string; allowed_origins: string; daily_limit: number | null; active: number; approval: number }
+
+const PENDING_TTL_SEC = 14 * 86400;
 
 const MAX_BODY = 20_000;
 
@@ -131,8 +135,18 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       .bind(hash, now).run();
     if (!fresh.meta.changes) return fail("duplicate", p.key);
 
+    const built = buildIssue(r, forms, config.labels);
+    if (p.approval) {
+      // 承認モード（4.7）：起票せずに保存し、作者の承認を待つ
+      await env.DB.prepare("DELETE FROM pending WHERE created_at < ?").bind(now - PENDING_TTL_SEC).run();
+      await env.DB.prepare("INSERT INTO pending (id, key, issue, created_at) VALUES (?, ?, ?, ?)")
+        .bind(crypto.randomUUID(), p.key, JSON.stringify(built), now).run();
+      const res = Response.json({ ok: true, pending: true } satisfies ReportResponse, { status: 202 });
+      cors(res.headers);
+      return res;
+    }
     try {
-      const issue = await createIssue(creds(env), p.installation_id, p.repo, buildIssue(r, forms, config.labels));
+      const issue = await createIssue(creds(env), p.installation_id, p.repo, built);
       const res = Response.json({ ok: true, issueNumber: issue.number, issueUrl: issue.html_url } satisfies ReportResponse, { status: 201 });
       cors(res.headers);
       return res;
@@ -173,7 +187,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     if (!verified) return startAuth(env, target);
     // 7.3: GitHub API を呼ぶのはここからなので、ここで IP ごとに絞る（認可画面へのリダイレクトは数えない）
     const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
-    if (!(await env.RL_IP.limit({ key: `setup:${ip}` })).success) {
+    if (!(await env.RL_ADMIN.limit({ key: `setup:${ip}` })).success) {
       return html(messagePage("Too many requests", "<p>少し待ってからもう一度お試しください。</p>"), {}, 429);
     }
     const forbidden = () => html(messagePage("Forbidden", "<p>確認できませんでした。インストールしたアカウントでもう一度お試しください。</p>"), {}, 403);
@@ -185,7 +199,11 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       for (const id of ids) {
         const repos = await userInstallationRepos(token, id);
         if (!repos) { if (target !== "keys") return forbidden(); continue; }
-        for (const repo of repos) rows.push({ ...(await ensureProject(env, id, repo.name)), canEdit: repo.canAdmin, installationId: id });
+        for (const repo of repos) {
+          const row: KeyRow = { ...(await ensureProject(env, id, repo.name, repo.isPrivate)), canEdit: repo.canAdmin, installationId: id };
+          if (row.key && row.canEdit) row.pending = await listPending(env, row.key);
+          rows.push(row);
+        }
       }
     } catch (e) {
       console.log(String(e));
@@ -208,16 +226,16 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     const json = (body: unknown, status = 200) =>
       Response.json(body, { status, headers: { "cache-control": "no-store" } });
     const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
-    if (!(await env.RL_IP.limit({ key: `keys:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
+    if (!(await env.RL_ADMIN.limit({ key: `keys:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
     const token = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];
     if (!token) return json({ ok: false, error: "unauthorized" }, 401);
     try {
       if (!(await isOurUserToken(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, token))) return json({ ok: false, error: "unauthorized" }, 401);
       const rows: KeyRow[] = [];
       for (const id of await userInstallations(token)) {
-        for (const repo of (await userInstallationRepos(token, id)) ?? []) rows.push(await ensureProject(env, id, repo.name));
+        for (const repo of (await userInstallationRepos(token, id)) ?? []) rows.push(await ensureProject(env, id, repo.name, repo.isPrivate));
       }
-      return json({ ok: true, endpoint: new URL(req.url).origin, keys: rows.map((r) => ({ repo: r.repo, key: r.key, stopped: r.key === null, allowedOrigins: r.origins, dailyLimit: r.dailyLimit })) });
+      return json({ ok: true, endpoint: new URL(req.url).origin, keys: rows.map((r) => ({ repo: r.repo, key: r.key, stopped: r.key === null, allowedOrigins: r.origins, dailyLimit: r.dailyLimit, approval: r.approval })) });
     } catch (e) {
       console.log(String(e));
       return json({ ok: false, error: "upstream_error" }, 502);
@@ -232,10 +250,10 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
     if (req.headers.get("origin") !== new URL(req.url).origin) return json({ ok: false, error: "forbidden" }, 403);
     const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
-    if (!(await env.RL_IP.limit({ key: `settings:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
+    if (!(await env.RL_ADMIN.limit({ key: `settings:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
     const text = await req.text();
     if (text.length > 4000) return json({ ok: false, error: "invalid_input" }, 400);
-    let b: { session?: unknown; repo?: unknown; allowedOrigins?: unknown; dailyLimit?: unknown };
+    let b: { session?: unknown; repo?: unknown; allowedOrigins?: unknown; dailyLimit?: unknown; approval?: unknown };
     try { b = JSON.parse(text); } catch { return json({ ok: false, error: "invalid_input" }, 400); }
     const grants = await verifySession(env.SESSION_SECRET, b.session);
     if (!grants) return json({ ok: false, error: "session_expired" }, 401);
@@ -243,12 +261,47 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     if (!grant) return json({ ok: false, error: "forbidden" }, 403);
     const allowed = normalizeOrigins(b.allowedOrigins);
     const limit = normalizeDailyLimit(b.dailyLimit);
-    if (!allowed || limit === undefined) return json({ ok: false, error: "invalid_input" }, 400);
+    if (!allowed || limit === undefined || typeof b.approval !== "boolean") return json({ ok: false, error: "invalid_input" }, 400);
     // 署名後にアンインストール・付け替えされていたら変えない
-    const r = await env.DB.prepare("UPDATE projects SET allowed_origins = ?, daily_limit = ? WHERE repo = ? AND installation_id = ? AND active = 1 AND banned = 0")
-      .bind(allowed.join(","), limit, grant[0], grant[1]).run();
+    const r = await env.DB.prepare("UPDATE projects SET allowed_origins = ?, daily_limit = ?, approval = ? WHERE repo = ? AND installation_id = ? AND active = 1 AND banned = 0")
+      .bind(allowed.join(","), limit, b.approval ? 1 : 0, grant[0], grant[1]).run();
     if (!r.meta.changes) return json({ ok: false, error: "forbidden" }, 403);
-    return json({ ok: true, allowedOrigins: allowed, dailyLimit: limit });
+    return json({ ok: true, allowedOrigins: allowed, dailyLimit: limit, approval: b.approval });
+  }
+
+  /** 4.7: 承認待ちの報告を起票する・捨てる。認可は設定と同じ署名付きトークン。 */
+  async function apiPending(req: Request, env: Env): Promise<Response> {
+    const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
+    if (req.headers.get("origin") !== new URL(req.url).origin) return json({ ok: false, error: "forbidden" }, 403);
+    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+    if (!(await env.RL_ADMIN.limit({ key: `pending:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
+    const text = await req.text();
+    if (text.length > 4000) return json({ ok: false, error: "invalid_input" }, 400);
+    let b: { session?: unknown; repo?: unknown; id?: unknown; action?: unknown };
+    try { b = JSON.parse(text); } catch { return json({ ok: false, error: "invalid_input" }, 400); }
+    if (typeof b.id !== "string" || (b.action !== "approve" && b.action !== "reject")) return json({ ok: false, error: "invalid_input" }, 400);
+    const grants = await verifySession(env.SESSION_SECRET, b.session);
+    if (!grants) return json({ ok: false, error: "session_expired" }, 401);
+    const grant = grants.find(([repo]) => repo === b.repo);
+    if (!grant) return json({ ok: false, error: "forbidden" }, 403);
+    // 署名にあるリポジトリ・インストールの、有効なプロジェクトの承認待ちだけを対象にする
+    const row = await env.DB.prepare(
+      "SELECT pending.issue AS issue FROM pending JOIN projects ON projects.key = pending.key WHERE pending.id = ? AND projects.repo = ? AND projects.installation_id = ? AND projects.active = 1 AND projects.banned = 0",
+    ).bind(b.id, grant[0], grant[1]).first<{ issue: string }>();
+    if (!row) return json({ ok: false, error: "not_found" }, 404);
+    // 先に消して、二重に起票されないようにする（起票に失敗したら戻す）
+    const del = await env.DB.prepare("DELETE FROM pending WHERE id = ?").bind(b.id).run();
+    if (!del.meta.changes) return json({ ok: false, error: "not_found" }, 404);
+    if (b.action === "reject") return json({ ok: true });
+    try {
+      const issue = await createIssue(creds(env), grant[1], grant[0], JSON.parse(row.issue));
+      return json({ ok: true, issueNumber: issue.number, issueUrl: issue.html_url });
+    } catch (e) {
+      console.log(String(e));
+      await env.DB.prepare("INSERT INTO pending (id, key, issue, created_at) SELECT ?, key, ?, ? FROM projects WHERE repo = ?")
+        .bind(b.id, row.issue, Math.floor(Date.now() / 1000), grant[0]).run();
+      return json({ ok: false, error: "upstream_error" }, 502);
+    }
   }
 
   /** GitHub の認可画面へ送る。state = ランダム値.対象 を、同じ値の短命クッキーと組にする。 */
@@ -268,19 +321,31 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
   }
 
   /** 7.4: 有効なキーがあれば再利用、停止中なら新しいキーに置き換える。運営が止めたものは復活させない。 */
-  async function ensureProject(env: Env, id: number, repo: string): Promise<KeyRow> {
-    const cur = await env.DB.prepare("SELECT key, active, banned, allowed_origins, daily_limit FROM projects WHERE repo = ?").bind(repo)
-      .first<{ key: string; active: number; banned: number; allowed_origins: string; daily_limit: number | null }>();
-    if (cur?.banned) return { repo, key: null, origins: [], dailyLimit: null };
+  async function ensureProject(env: Env, id: number, repo: string, isPrivate: boolean): Promise<KeyRow> {
+    const cur = await env.DB.prepare("SELECT key, active, banned, allowed_origins, daily_limit, approval FROM projects WHERE repo = ?").bind(repo)
+      .first<{ key: string; active: number; banned: number; allowed_origins: string; daily_limit: number | null; approval: number }>();
+    if (cur?.banned) return { repo, key: null, origins: [], dailyLimit: null, approval: false };
     if (!cur || !cur.active) {
       const key = newKey();
       await env.DB.prepare(
-        "INSERT INTO projects (key, installation_id, repo) VALUES (?, ?, ?) ON CONFLICT (repo) DO UPDATE SET key = excluded.key, installation_id = excluded.installation_id, active = 1",
-      ).bind(key, id, repo).run();
-      return { repo, key, origins: cur ? splitOrigins(cur.allowed_origins) : [], dailyLimit: cur?.daily_limit ?? null };
+        // 4.7: 新規は公開リポジトリなら承認モード、非公開なら即時起票。再有効化では作者が選んだ値を残す
+        "INSERT INTO projects (key, installation_id, repo, approval) VALUES (?, ?, ?, ?) ON CONFLICT (repo) DO UPDATE SET key = excluded.key, installation_id = excluded.installation_id, active = 1",
+      ).bind(key, id, repo, isPrivate ? 0 : 1).run();
+      return { repo, key, origins: cur ? splitOrigins(cur.allowed_origins) : [], dailyLimit: cur?.daily_limit ?? null, approval: cur ? !!cur.approval : !isPrivate };
     }
     await env.DB.prepare("UPDATE projects SET installation_id = ? WHERE repo = ?").bind(id, repo).run();
-    return { repo, key: cur.key, origins: splitOrigins(cur.allowed_origins), dailyLimit: cur.daily_limit };
+    return { repo, key: cur.key, origins: splitOrigins(cur.allowed_origins), dailyLimit: cur.daily_limit, approval: !!cur.approval };
+  }
+
+  async function listPending(env: Env, key: string): Promise<PendingItem[]> {
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB.prepare("DELETE FROM pending WHERE created_at < ?").bind(now - PENDING_TTL_SEC).run();
+    const r = await env.DB.prepare("SELECT id, issue, created_at FROM pending WHERE key = ? ORDER BY created_at DESC LIMIT 50").bind(key)
+      .all<{ id: string; issue: string; created_at: number }>();
+    return r.results.map((x) => {
+      const i = JSON.parse(x.issue) as { title: string; body: string };
+      return { id: x.id, title: i.title, body: i.body, createdAt: x.created_at };
+    });
   }
 
 
@@ -357,9 +422,11 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
 
       if (req.method === "GET" && path === "/setup") return setup(req, url, env);
       // あとからキーを確認するページ。GitHub の認可画面へ送り、戻り先の /setup で一覧を出す
-      if (req.method === "GET" && path === "/keys") return startAuth(env, "keys");
+      // 管理画面。/keys は以前の URL として残す
+      if (req.method === "GET" && (path === "/admin" || path === "/keys")) return startAuth(env, "keys");
       if (req.method === "GET" && path === "/api/keys") return apiKeys(req, env);
       if (req.method === "POST" && path === "/api/settings") return apiSettings(req, env);
+      if (req.method === "POST" && path === "/api/pending") return apiPending(req, env);
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");

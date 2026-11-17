@@ -82,16 +82,16 @@ export async function userInstallations(token: string): Promise<number[]> {
  * Organization のメンバーが、自分に権限のないリポジトリ名やキーを見られないようにするため。
  * アクセスできなければ null。
  */
-export interface UserRepo { name: string; canAdmin: boolean }
+export interface UserRepo { name: string; canAdmin: boolean; isPrivate: boolean }
 export async function userInstallationRepos(token: string, id: number): Promise<UserRepo[] | null> {
   // shortcut: 先頭 100 件のみ。100 リポジトリを超えたらページングを足す
   const res = await fetch(`${API}/user/installations/${id}/repositories?per_page=100`, {
     headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "posissue" },
   });
   if (!res.ok) return null; // 404 = そのユーザーはこのインストールにアクセスできない
-  const r = (await res.json()) as { repositories: { full_name: string; permissions?: { admin?: boolean; maintain?: boolean } }[] };
+  const r = (await res.json()) as { repositories: { full_name: string; private?: boolean; permissions?: { admin?: boolean; maintain?: boolean } }[] };
   // 設定を変えられるのは、そのリポジトリの管理者（admin / maintain）だけ（4.6）
-  return r.repositories.map((x) => ({ name: x.full_name, canAdmin: !!(x.permissions?.admin || x.permissions?.maintain) }));
+  return r.repositories.map((x) => ({ name: x.full_name, canAdmin: !!(x.permissions?.admin || x.permissions?.maintain), isPrivate: x.private !== false }));
 }
 
 export async function createIssue(

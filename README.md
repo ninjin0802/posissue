@@ -42,7 +42,7 @@
 
 ### 1. GitHub App をインストール
 
-[公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。あとから確認したいときは **[キーを確認](https://posissue.2nj.lol/keys)** から GitHub でログインするだけで、自分のリポジトリのキーと貼り付け用コードが一覧で出ます。
+[公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。あとから確認したいときは **[管理画面](https://posissue.2nj.lol/admin)**（トップページ右上の「管理画面」）を開き、GitHub でログインするだけです。キーと貼り付け用コードの確認、設定（埋め込みを許すサイト・1 日の上限・承認モード）の変更、承認待ちの報告の処理ができます。
 
 ターミナルからも確認できます（Node 18+）。表示された URL とコードでブラウザからログインすると、キーが出ます。
 
