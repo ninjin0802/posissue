@@ -328,117 +328,193 @@ export interface KeyRow {
 
 const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
 
-/** ログインした作者に、自分のリポジトリの projectKey と貼り付け用コードを見せる（/setup・/keys）。 */
+const ADMIN_STYLE = `
+:root{--bg:#f6f6fb;--card:#fff;--fg:#16161d;--muted:#6b6b7b;--line:#e7e7ef;--field:#fafafd;--accent:#5b5bd6;--accent2:#c05bd6;--accent-fg:#fff;
+--soft:rgba(91,91,214,.1);--err:#d1344b;--ok:#1f9d63;--warn:#b7791f;--shadow:0 1px 2px rgba(20,20,40,.04),0 10px 30px rgba(20,20,40,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--card:#14141c;--fg:#ececf3;--muted:#9d9db0;--line:#25252f;--field:#1a1a24;--accent:#8b8bf5;--accent2:#d58bf5;
+--accent-fg:#0b0b11;--soft:rgba(139,139,245,.14);--err:#ff6b81;--ok:#4cd498;--warn:#f0b35a;--shadow:none}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.bar{position:sticky;top:0;z-index:5;backdrop-filter:saturate(1.6) blur(12px);background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid var(--line)}
+.bar .in{max-width:880px;margin:0 auto;padding:0 20px;height:58px;display:flex;align-items:center;gap:12px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;text-decoration:none;color:inherit}.logo img{width:28px;height:28px}
+.crumb{color:var(--muted);font-size:14px}.crumb:before{content:"/";margin:0 10px 0 2px;opacity:.5}
+.bar .sp{flex:1}.bar a.lk{font-size:14px;color:var(--muted);text-decoration:none}.bar a.lk:hover{color:var(--fg)}
+main{max-width:880px;margin:0 auto;padding:28px 20px 64px}
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px}.lead{margin:0;color:var(--muted);font-size:14px;max-width:34em}
+.stats{display:flex;gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 16px;min-width:108px;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--muted)}
+.stat.hot b{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.ok-banner{display:flex;gap:10px;align-items:center;background:var(--soft);color:var(--fg);border-radius:14px;padding:12px 16px;margin-bottom:18px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.head{display:flex;align-items:center;gap:10px;padding:16px 20px 0;flex-wrap:wrap}
+.head h2{display:flex;align-items:center;gap:8px;font-size:16px;margin:0;word-break:break-all}
+.badge{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.badge.ap{color:var(--accent);background:var(--soft);border-color:transparent}
+.badge.off{color:var(--err);border-color:currentColor}
+.tabs{display:flex;gap:4px;padding:12px 16px 0;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:none;color:var(--muted);font:600 14px/1 inherit;font-family:inherit;padding:10px 12px 12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tab:hover{color:var(--fg)}.tab[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:8px}
+.n{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--line);color:var(--muted);font-size:11.5px;display:inline-grid;place-items:center}
+.n.hot{background:var(--accent);color:var(--accent-fg)}
+.panel{padding:18px 20px 20px}
+.lbl{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:0 0 6px}
+.lbl+.row,.row+.lbl{margin-top:0}.blk{margin-bottom:16px}.blk:last-child{margin-bottom:0}
+.row{display:flex;gap:8px;align-items:stretch}
+.row code{flex:1;min-width:0;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font:13px/1.55 ui-monospace,Menlo,monospace;word-break:break-all}
+.row code.key{font-size:16px;font-weight:700;letter-spacing:.02em}
+.cp{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:12px;padding:0 14px;font:600 13px/1 inherit;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s}
+.cp:hover{border-color:var(--accent)}.cp.done{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.cp:focus-visible,.btn:focus-visible,.ghost:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.more{font-size:13px;font-weight:600;text-decoration:none}
+.empty{text-align:center;padding:28px 12px;color:var(--muted)}
+.empty .ic{font-size:28px;display:block;margin-bottom:6px}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--field)}
+.it-top{display:flex;gap:10px;align-items:flex-start}
+.it-main{flex:1;min-width:0}
+.it-title{font-weight:700;font-size:14.5px;word-break:break-word}
+.it-meta{font-size:12px;color:var(--muted)}
+.it-body{margin:8px 0 0;font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}
+.item.open .it-body{-webkit-line-clamp:unset;color:var(--fg)}
+.it-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.btn{border:0;background:var(--accent);color:var(--accent-fg);border-radius:10px;padding:8px 16px;font:600 13.5px/1 inherit;font-family:inherit;cursor:pointer}
+.ghost{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:7px 14px;font:600 13.5px/1 inherit;font-family:inherit;cursor:pointer}
+.ghost.toggle{border:0;background:none;color:var(--accent);padding:7px 4px}
+.btn:disabled,.ghost:disabled{opacity:.55;cursor:default}
+.st{font-size:13px;color:var(--muted)}.st.err{color:var(--err)}.st.ok{color:var(--ok)}
+.seg{display:inline-flex;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg label{position:relative}.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:block;padding:8px 14px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--muted);transition:background .15s,color .15s}
+.seg input:checked+span{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg input:focus-visible+span{outline:2px solid var(--accent)}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+textarea,input[type=number]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--fg);font:13.5px/1.55 ui-monospace,Menlo,monospace}
+input[type=number]{max-width:180px;font-family:inherit;font-size:14px}
+textarea:focus,input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
+.save-row{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.note{font-size:13px;color:var(--muted);padding:0 20px 18px}
+.addcard{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1.5px dashed var(--line);border-radius:18px;padding:16px 20px;color:var(--muted);font-size:14px}
+footer{max-width:880px;margin:0 auto;padding:0 20px 40px;display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:13px}footer a{color:var(--muted)}
+@media (max-width:600px){.hero{display:block}.stats{margin-top:14px}.stat{flex:1;min-width:0}h1{font-size:24px}.bar .lk.h{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
+
+/** ログインした作者向けの管理画面（/admin・/setup）。キーの確認、設定、承認待ちの処理。 */
 export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; session: string; defaultDailyLimit: number; justInstalled: boolean }) {
   const install = `https://github.com/apps/${encodeURIComponent(o.appSlug)}/installations/new`;
   const copyBtn = (v: string, label: string) =>
     `<button type="button" class="cp" data-copy="${esc(v)}" aria-label="${esc(label)}をコピー">${COPY_ICON}<span>コピー</span></button>`;
+  const totalPending = o.rows.reduce((n, r) => n + (r.pending?.length ?? 0), 0);
+  // 承認待ちの表示用に、Issue 本文の Markdown の記号を読みやすく整える（中身は変えない）
+  const readable = (b: string) => b.replace(/^### /gm, "■ ").replace(/<\/?details>|<\/?summary>/g, "").replace(/\n---\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  const fmt = (t: number) => new Date(t * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  let uid = 0;
   const cards = o.rows.map((r) => {
+    const id = `c${uid++}`;
     if (!r.key) {
-      return `<article class="k off"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><p class="stop">このリポジトリは運営により停止されています。</p></article>`;
+      return `<section class="card"><div class="head"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><span class="badge off">停止中</span></div>
+<p class="note" style="padding-top:12px">このリポジトリは運営により停止されています。</p></section>`;
     }
     const tag = `<script src="${o.origin}/widget.js" data-key="${r.key}" async></script>`;
-    const pend = r.pending ?? [];
-    const pendingHtml = r.canEdit && (r.approval || pend.length) ? `<details class="pend"${pend.length ? " open" : ""}><summary>承認待ち <b class="cnt">${pend.length}</b> 件</summary>
-${pend.length ? pend.map((x) => `<div class="pi" data-id="${esc(x.id)}" data-repo="${esc(r.repo)}">
-<div class="pt">${esc(x.title)}</div><div class="pm">${esc(new Date(x.createdAt * 1000).toISOString().slice(0, 16).replace("T", " "))} UTC</div>
-<details><summary>内容を見る</summary><pre class="pb">${esc(x.body)}</pre></details>
-<div class="pa"><button type="button" class="ap" data-action="approve">起票する</button><button type="button" class="rj" data-action="reject">捨てる</button><span class="st" role="status" aria-live="polite"></span></div></div>`).join("")
-  : `<p class="hint">承認待ちの報告はありません。届いた報告は 14 日で自動的に消えます。</p>`}</details>` : "";
     const app = `${o.origin}/r/${r.key}`;
-    return `<article class="k"><h2>${GH_ICON}<span>${esc(r.repo)}</span>${r.approval ? `<span class="tag">承認モード</span>` : ""}</h2>
-<div class="row"><code class="key">${esc(r.key)}</code>${copyBtn(r.key, "キー")}</div>
-<details><summary>貼り付け用のコード</summary>
-<p class="lbl">サイトに貼る（&lt;/body&gt; の前）</p><div class="row"><code>${esc(tag)}</code>${copyBtn(tag, "script タグ")}</div>
-<p class="lbl">アプリの WebView で開く URL</p><div class="row"><code>${esc(app)}</code>${copyBtn(app, "URL")}</div>
-<p class="lbl"><a href="${esc(app)}" target="_blank" rel="noopener">フォームを開いて確かめる ↗</a></p>
-</details>
-${r.canEdit ? `<details><summary>設定</summary>
-<form class="set" data-repo="${esc(r.repo)}">
-<label class="lbl" for="o_${esc(r.key)}">埋め込みを許すサイト（1 行に 1 つ、最大 10）</label>
-<textarea id="o_${esc(r.key)}" name="origins" rows="3" placeholder="https://example.com" spellcheck="false">${esc(r.origins.join("\n"))}</textarea>
-<p class="hint">空にすると、どのサイトにも埋め込めます。アプリの WebView から開く場合は影響しません。</p>
-<label class="lbl" for="l_${esc(r.key)}">1 日に受け付ける件数の上限（1〜1000）</label>
-<input id="l_${esc(r.key)}" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="既定: ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}">
-<fieldset class="mode"><legend class="lbl">届いた報告の扱い</legend>
-<label><input type="radio" name="approval" value="1"${r.approval ? " checked" : ""}> 承認してから起票する <span class="hint">（公開リポジトリのおすすめ）</span></label>
-<label><input type="radio" name="approval" value="0"${r.approval ? "" : " checked"}> すぐに起票する</label>
-</fieldset>
-<div class="act"><button type="submit" class="save">保存</button><span class="st" role="status" aria-live="polite"></span></div>
-</form></details>${pendingHtml}` : `<p class="hint">設定の変更は、このリポジトリの管理者だけができます。</p>`}</article>`;
+    const pend = r.pending ?? [];
+    const tabs: [string, string, string][] = [["setup", "導入", ""]];
+    if (r.canEdit) {
+      tabs.push(["pending", "承認待ち", `<span class="n${pend.length ? " hot" : ""}">${pend.length}</span>`]);
+      tabs.push(["settings", "設定", ""]);
+    }
+    const first = r.canEdit && pend.length ? "pending" : "setup";
+    const panel = (k: string, body: string) =>
+      `<div class="panel" role="tabpanel" id="${id}-${k}" aria-labelledby="${id}-t-${k}"${k === first ? "" : " hidden"}>${body}</div>`;
+    const setupPanel = panel("setup", `
+<div class="blk"><span class="lbl">プロジェクトキー</span><div class="row"><code class="key">${esc(r.key)}</code>${copyBtn(r.key, "キー")}</div></div>
+<div class="blk"><span class="lbl">サイトに貼る（&lt;/body&gt; の前）</span><div class="row"><code>${esc(tag)}</code>${copyBtn(tag, "script タグ")}</div></div>
+<div class="blk"><span class="lbl">アプリの WebView で開く URL</span><div class="row"><code>${esc(app)}</code>${copyBtn(app, "URL")}</div></div>
+<a class="more" href="${esc(app)}" target="_blank" rel="noopener">フォームを開いて確かめる ↗</a>`);
+    const pendingPanel = !r.canEdit ? "" : panel("pending", pend.length
+      ? `<div class="list">${pend.map((x) => `<article class="item" data-id="${esc(x.id)}" data-repo="${esc(r.repo)}">
+<div class="it-top"><div class="it-main"><div class="it-title">${esc(x.title)}</div><div class="it-meta">${esc(fmt(x.createdAt))}</div></div></div>
+<p class="it-body">${esc(readable(x.body))}</p>
+<div class="it-act"><button type="button" class="btn" data-action="approve">起票する</button><button type="button" class="ghost" data-action="reject">捨てる</button>
+<button type="button" class="ghost toggle" data-more>全文を見る</button><span class="st" role="status" aria-live="polite"></span></div></article>`).join("")}</div>`
+      : `<div class="empty"><span class="ic" aria-hidden="true">📭</span>承認待ちの報告はありません。${r.approval ? "" : "<br>今は「すぐに起票」なので、報告はそのまま Issue になります。"}</div>`);
+    const settingsPanel = !r.canEdit ? "" : panel("settings", `<form class="set" data-repo="${esc(r.repo)}">
+<div class="blk"><span class="lbl" id="${id}-m">届いた報告の扱い</span>
+<div class="seg" role="radiogroup" aria-labelledby="${id}-m">
+<label><input type="radio" name="approval" value="1"${r.approval ? " checked" : ""}><span>承認してから起票</span></label>
+<label><input type="radio" name="approval" value="0"${r.approval ? "" : " checked"}><span>すぐに起票</span></label></div>
+<p class="hint">公開リポジトリでは「承認してから起票」がおすすめです。承認待ちは 14 日で自動的に消えます。</p></div>
+<div class="blk"><label class="lbl" for="${id}-o">埋め込みを許すサイト（1 行に 1 つ、最大 10）</label>
+<textarea id="${id}-o" name="origins" rows="3" placeholder="https://example.com" spellcheck="false">${esc(r.origins.join("\n"))}</textarea>
+<p class="hint">空にすると、どのサイトにも埋め込めます。アプリの WebView から開く場合は影響しません。</p></div>
+<div class="blk"><label class="lbl" for="${id}-l">1 日に受け付ける件数の上限（1〜1000）</label>
+<input id="${id}-l" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="既定 ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}"></div>
+<div class="save-row"><button type="submit" class="btn">保存</button><span class="st" role="status" aria-live="polite"></span></div></form>`);
+    return `<section class="card" aria-label="${esc(r.repo)}">
+<div class="head"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
+${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? "承認モード" : "すぐに起票"}</span>` : ""}</div>
+<div class="tabs" role="tablist">${tabs.map(([k, label, extra]) =>
+  `<button type="button" class="tab" role="tab" id="${id}-t-${k}" aria-controls="${id}-${k}" aria-selected="${k === first}" tabindex="${k === first ? 0 : -1}">${label}${extra}</button>`).join("")}</div>
+${setupPanel}${pendingPanel}${settingsPanel}
+${r.canEdit ? "" : `<p class="note">設定の変更と承認は、このリポジトリの管理者だけができます。</p>`}</section>`;
   }).join("");
-  const empty = `<div class="card empty"><p>まだ PosIssue を入れたリポジトリがありません。</p><a class="btn" href="${esc(install)}">GitHub App をインストール</a></div>`;
+  const empty = `<section class="card"><div class="empty" style="padding:44px 20px"><span class="ic" aria-hidden="true">🧩</span>
+まだ PosIssue を入れたリポジトリがありません。<br><br><a class="btn" style="text-decoration:none;display:inline-block" href="${esc(install)}">GitHub App をインストール</a></div></section>`;
   return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark"><meta name="robots" content="noindex"><title>管理画面 | PosIssue</title>
-<link rel="icon" href="/icon.svg" type="image/svg+xml"><style>${STYLE}
-.wrap{max-width:680px}
-.top{display:flex;align-items:center;gap:12px;margin-bottom:6px}.top img{width:40px;height:40px}
-.top a{text-decoration:none;color:inherit;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px}
-h1{font-size:24px;margin:18px 0 4px}.lead{color:var(--muted);margin:0 0 22px}
-.ok{display:flex;gap:8px;align-items:center;background:var(--accent-soft);border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:14px}
-.k{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
-.k h2{display:flex;align-items:center;gap:8px;font-size:15px;margin:0 0 10px;word-break:break-all}
-.row{display:flex;gap:8px;align-items:stretch}
-.row code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font:13px/1.5 ui-monospace,Menlo,monospace}
-.row code:not(.key){white-space:normal;word-break:break-all}
-.row code.key{font-size:15px;font-weight:600;letter-spacing:.02em}
-.cp{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:0 12px;font:600 13px/1 inherit;font-family:inherit;cursor:pointer}
-.cp:hover{border-color:var(--accent)}.cp.done{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
-.cp:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-details{margin-top:12px}summary{cursor:pointer;color:var(--accent);font-size:14px;font-weight:600}
-.lbl{font-size:12px;color:var(--muted);margin:12px 0 6px}.lbl a{color:var(--accent)}
-.off{opacity:.7}.stop{margin:0;color:var(--err);font-size:14px}
-.set label{display:block}
-.set textarea,.set input{width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--field);color:var(--fg);font:13px/1.5 ui-monospace,Menlo,monospace}
-.set input{max-width:200px;font-family:inherit;font-size:14px}
-.set textarea:focus,.set input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.hint{font-size:12px;color:var(--muted);margin:4px 0 0}
-.act{display:flex;align-items:center;gap:12px;margin-top:12px}
-.save{border:0;background:var(--accent);color:var(--accent-fg);border-radius:10px;padding:9px 18px;font:600 14px/1 inherit;font-family:inherit;cursor:pointer}.save:disabled{opacity:.6}
-.st{font-size:13px;color:var(--muted)}.st.err{color:var(--err)}.st.ok{color:var(--ok)}
-.mode{border:0;padding:0;margin:12px 0 0}.mode label{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0}.mode input{accent-color:var(--accent)}
-.tag{margin-left:auto;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:999px}
-.pend{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}.cnt{color:var(--accent)}
-.pi{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;background:var(--field)}
-.pt{font-weight:600;font-size:14px;word-break:break-word}.pm{font-size:12px;color:var(--muted)}
-.pb{white-space:pre-wrap;word-break:break-word;font:12.5px/1.6 ui-monospace,Menlo,monospace;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto}
-.pa{display:flex;gap:8px;align-items:center;margin-top:10px}
-.ap,.rj{border:1.5px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:7px 14px;font:600 13px/1 inherit;font-family:inherit;cursor:pointer}
-.ap{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}.ap:disabled,.rj:disabled{opacity:.6}
-.empty{text-align:center;padding:32px 18px}.empty p{color:var(--muted);margin:0 0 16px}
-.btn{display:inline-block;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:600;padding:10px 18px;border-radius:10px}
-.foot{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-top:22px;font-size:14px}.foot a{color:var(--accent)}
-</style></head><body><div class="wrap">
-<div class="top"><a href="/"><img src="/icon.svg" alt="" width="40" height="40">PosIssue</a></div>
-<h1>管理画面</h1>
-<p class="lead">GitHub アカウントで確認できた、あなたがアクセスできるリポジトリだけを表示しています。キーの確認、設定の変更、承認待ちの報告の処理ができます。キーはサイトやアプリに載せる公開の値です。</p>
-${o.justInstalled ? `<div class="ok" role="status">✅ インストールが完了しました。下のコードをサイトに貼るだけで使えます。</div>` : ""}
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><style>${ADMIN_STYLE}</style></head><body>
+<header class="bar"><div class="in"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><span class="crumb">管理画面</span>
+<span class="sp"></span><a class="lk h" href="${esc(install)}">リポジトリを追加・変更</a><a class="lk" href="/">トップ</a></div></header>
+<main>
+${o.justInstalled ? `<div class="ok-banner" role="status">✅ インストールが完了しました。「導入」のコードをサイトに貼るだけで使えます。</div>` : ""}
+<div class="hero"><div><h1>管理画面</h1><p class="lead">GitHub で確認できた、あなたがアクセスできるリポジトリだけを表示しています。</p></div>
+<div class="stats"><div class="stat"><b>${o.rows.filter((r) => r.key).length}</b><span>リポジトリ</span></div>
+<div class="stat${totalPending ? " hot" : ""}"><b>${totalPending}</b><span>承認待ち</span></div></div></div>
 ${o.rows.length ? cards : empty}
-<div class="foot"><a href="${esc(install)}">リポジトリを追加・変更する</a><a href="/">トップへ戻る</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a></div>
-</div>
+${o.rows.length ? `<div class="addcard"><span>別のリポジトリにも入れる・外す</span><a class="ghost" style="text-decoration:none" href="${esc(install)}">リポジトリを追加・変更</a></div>` : ""}
+</main>
+<footer><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer>
 <script nonce="${o.nonce}">
-document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener("click",function(){
-var s=b.querySelector("span");navigator.clipboard.writeText(b.dataset.copy).then(function(){
-b.classList.add("done");s.textContent="コピー済み";setTimeout(function(){b.classList.remove("done");s.textContent="コピー"},1600)},
-function(){s.textContent="選択してコピーしてください"})})});
+(function(){
 var SESSION=${JSON.stringify(o.session)};
-var ERR={invalid_input:"入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。",session_expired:"時間が経ちました。ページを開き直してください。",forbidden:"このリポジトリは変更できません。",rate_limited:"少し待ってからもう一度お試しください。"};
+var ERR={invalid_input:"入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。",session_expired:"時間が経ちました。ページを開き直してください。",
+forbidden:"このリポジトリは変更できません。",rate_limited:"少し待ってからもう一度お試しください。",not_found:"すでに処理されています。",upstream_error:"GitHub への起票に失敗しました。時間をおいてお試しください。"};
+function call(path,body){return fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.assign({session:SESSION},body))}).then(function(r){return r.json()})}
+function say(st,cls,text){st.className="st"+(cls?" "+cls:"");st.textContent=text}
+// タブ（矢印キーでも移動できる）
+document.querySelectorAll("[role=tablist]").forEach(function(list){var tabs=[].slice.call(list.querySelectorAll("[role=tab]"));
+function sel(t){tabs.forEach(function(x){var on=x===t;x.setAttribute("aria-selected",on);x.tabIndex=on?0:-1;document.getElementById(x.getAttribute("aria-controls")).hidden=!on})}
+tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(t)});t.addEventListener("keydown",function(e){var j=e.key==="ArrowRight"?i+1:e.key==="ArrowLeft"?i-1:-1;
+if(j<0&&e.key!=="ArrowLeft")return;j=(j+tabs.length)%tabs.length;sel(tabs[j]);tabs[j].focus();e.preventDefault()})})});
+// コピー
+document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener("click",function(){var s=b.querySelector("span");
+navigator.clipboard.writeText(b.dataset.copy).then(function(){b.classList.add("done");s.textContent="コピー済み";setTimeout(function(){b.classList.remove("done");s.textContent="コピー"},1600)},
+function(){s.textContent="選択してコピー"})})});
+// 設定
 document.querySelectorAll("form.set").forEach(function(f){f.addEventListener("submit",function(e){e.preventDefault();
-var st=f.querySelector(".st"),btn=f.querySelector(".save"),lim=f.elements.limit.value.trim();
-var origins=f.elements.origins.value.split("\n").map(function(x){return x.trim()}).filter(Boolean);
-btn.disabled=true;st.className="st";st.textContent="保存しています…";
-fetch("/api/settings",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({session:SESSION,repo:f.dataset.repo,allowedOrigins:origins,dailyLimit:lim?Number(lim):null,approval:f.querySelector("[name=approval]:checked").value==="1"})})
-.then(function(r){return r.json()}).then(function(r){if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\n");st.className="st ok";st.textContent="保存しました"}
-else{st.className="st err";st.textContent=ERR[r.error]||"保存できませんでした。"}})
-.catch(function(){st.className="st err";st.textContent="通信に失敗しました。"}).finally(function(){btn.disabled=false})})});
-ERR.not_found="すでに処理されています。";ERR.upstream_error="GitHub への起票に失敗しました。時間をおいてお試しください。";
-document.querySelectorAll(".pi [data-action]").forEach(function(b){b.addEventListener("click",function(){
-var it=b.closest(".pi"),st=it.querySelector(".st"),bs=it.querySelectorAll("button[data-action]");bs.forEach(function(x){x.disabled=true});st.className="st";st.textContent="処理しています…";
-fetch("/api/pending",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({session:SESSION,repo:it.dataset.repo,id:it.dataset.id,action:b.dataset.action})})
-.then(function(r){return r.json()}).then(function(r){if(r.ok){st.className="st ok";st.textContent="";
-if(r.issueUrl){var a=document.createElement("a");a.href=r.issueUrl;a.target="_blank";a.rel="noopener";a.textContent="Issue #"+r.issueNumber+" を作成しました";st.append(a)}else st.textContent="捨てました";
-var c=it.closest(".pend").querySelector(".cnt");c.textContent=Math.max(0,Number(c.textContent)-1)}
-else{st.className="st err";st.textContent=ERR[r.error]||"処理できませんでした。";bs.forEach(function(x){x.disabled=false})}})
-.catch(function(){st.className="st err";st.textContent="通信に失敗しました。";bs.forEach(function(x){x.disabled=false})})})});
+var st=f.querySelector(".st"),btn=f.querySelector("[type=submit]"),lim=f.elements.limit.value.trim(),ap=f.querySelector("[name=approval]:checked").value==="1";
+var origins=f.elements.origins.value.split("\\n").map(function(x){return x.trim()}).filter(Boolean);btn.disabled=true;say(st,"","保存しています…");
+call("/api/settings",{repo:f.dataset.repo,allowedOrigins:origins,dailyLimit:lim?Number(lim):null,approval:ap}).then(function(r){
+if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\\n");say(st,"ok","保存しました");
+var b=f.closest(".card").querySelector("[data-mode]");if(b){b.textContent=r.approval?"承認モード":"すぐに起票";b.classList.toggle("ap",r.approval)}}
+else say(st,"err",ERR[r.error]||"保存できませんでした。")}).catch(function(){say(st,"err","通信に失敗しました。")}).finally(function(){btn.disabled=false})})});
+// 承認待ち
+var total=document.querySelector(".stat:nth-child(2) b");
+document.querySelectorAll(".item").forEach(function(it){var st=it.querySelector(".st"),bs=it.querySelectorAll("[data-action]");
+it.querySelector("[data-more]").addEventListener("click",function(e){var o=it.classList.toggle("open");e.target.textContent=o?"たたむ":"全文を見る"});
+bs.forEach(function(b){b.addEventListener("click",function(){bs.forEach(function(x){x.disabled=true});say(st,"","処理しています…");
+call("/api/pending",{repo:it.dataset.repo,id:it.dataset.id,action:b.dataset.action}).then(function(r){
+if(!r.ok){say(st,"err",ERR[r.error]||"処理できませんでした。");bs.forEach(function(x){x.disabled=false});return}
+st.className="st ok";st.textContent="";if(r.issueUrl){var a=document.createElement("a");a.href=r.issueUrl;a.target="_blank";a.rel="noopener";a.textContent="Issue #"+r.issueNumber+" を作成しました ↗";st.append(a)}else st.textContent="捨てました";
+it.querySelector("[data-more]").remove();bs.forEach(function(x){x.remove()});it.style.opacity=".6";
+var n=it.closest(".card").querySelector(".n");var c=Math.max(0,Number(n.textContent)-1);n.textContent=c;if(!c)n.classList.remove("hot");
+if(total){var t=Math.max(0,Number(total.textContent)-1);total.textContent=t;if(!t)total.parentNode.classList.remove("hot")}})
+.catch(function(){say(st,"err","通信に失敗しました。");bs.forEach(function(x){x.disabled=false})})})})});
+})();
 </script></body></html>`;
 }
