@@ -302,7 +302,7 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 <div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
 </div></div></section>
 
-<footer><div class="w"><span>© PosIssue · MIT License</span><a href="${esc(o.repoUrl)}">github.com/ninjin0802/posissue</a></div></footer>
+<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><a href="${esc(o.repoUrl)}">github.com/ninjin0802/posissue</a></div></footer>
 <script nonce="${o.nonce}">
 document.querySelectorAll("[role=tab]").forEach(function(b){b.addEventListener("click",function(){
 document.querySelectorAll("[role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b)});
