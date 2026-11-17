@@ -151,18 +151,18 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
    * state は "keys"（全インストール）か installation_id（そのインストールだけ）。
    */
   async function setup(req: Request, url: URL, env: Env) {
-    const target = url.searchParams.get("installation_id") ?? url.searchParams.get("state") ?? "";
+    // 4.3: OAuth の state は、こちらが発行してクッキーにも入れたものと一致したときだけ信じる（ログイン CSRF 対策）。
+    // 一致しなければ code は使わず、認可からやり直す（インストール直後に GitHub から来た場合もここを通る。認可済みなら一瞬で戻ってくる）
+    const state = url.searchParams.get("state");
+    const code = url.searchParams.get("code");
+    const cookie = /(?:^|;\s*)pi_state=([^;]+)/.exec(req.headers.get("cookie") ?? "")?.[1];
+    const verified = !!(code && state && cookie && state === cookie);
+    const target = verified ? state!.slice(state!.indexOf(".") + 1) : (url.searchParams.get("installation_id") ?? "keys");
     const one = Number(target);
     if (target !== "keys" && (!Number.isInteger(one) || one <= 0)) {
       return html(messagePage("Error", "<p>installation_id がありません。</p>"), {}, 400);
     }
-    const code = url.searchParams.get("code");
-    if (!code) {
-      const auth = new URL("https://github.com/login/oauth/authorize");
-      auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
-      auth.searchParams.set("state", target);
-      return Response.redirect(auth.toString(), 302);
-    }
+    if (!verified) return startAuth(env, target);
     // 7.3: GitHub API を呼ぶのはここからなので、ここで IP ごとに絞る（認可画面へのリダイレクトは数えない）
     const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
     if (!(await env.RL_IP.limit({ key: `setup:${ip}` })).success) {
@@ -187,6 +187,23 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, justInstalled: target !== "keys" }), {
       "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`,
       "cache-control": "no-store",
+      "set-cookie": "pi_state=; Path=/setup; Max-Age=0; HttpOnly; Secure; SameSite=Lax", // 使い捨て
+    });
+  }
+
+  /** GitHub の認可画面へ送る。state = ランダム値.対象 を、同じ値の短命クッキーと組にする。 */
+  function startAuth(env: Env, target: string) {
+    const state = `${crypto.randomUUID().replace(/-/g, "")}.${target}`;
+    const auth = new URL("https://github.com/login/oauth/authorize");
+    auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
+    auth.searchParams.set("state", state);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        location: auth.toString(),
+        "set-cookie": `pi_state=${state}; Path=/setup; Max-Age=600; HttpOnly; Secure; SameSite=Lax`,
+        "cache-control": "no-store",
+      },
     });
   }
 
@@ -279,12 +296,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
 
       if (req.method === "GET" && path === "/setup") return setup(req, url, env);
       // あとからキーを確認するページ。GitHub の認可画面へ送り、戻り先の /setup で一覧を出す
-      if (req.method === "GET" && path === "/keys") {
-        const auth = new URL("https://github.com/login/oauth/authorize");
-        auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
-        auth.searchParams.set("state", "keys");
-        return Response.redirect(auth.toString(), 302);
-      }
+      if (req.method === "GET" && path === "/keys") return startAuth(env, "keys");
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");
