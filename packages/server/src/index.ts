@@ -5,7 +5,7 @@ import {
 } from "@posissue/core";
 import { mount } from "posissue";
 import { createIssue, getInstallation, listInstallationRepos, verifyWebhook, type GitHubCreds } from "./github";
-import { esc, formPage, messagePage } from "./pages";
+import { esc, formPage, landingPage, messagePage } from "./pages";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
 export { DEFAULT_FORMS } from "@posissue/core";
@@ -19,6 +19,8 @@ export interface Env {
   GITHUB_WEBHOOK_SECRET: string;
   TURNSTILE_SITE_KEY: string;
   TURNSTILE_SECRET: string;
+  /** トップページのデモに使う projectKey（任意）。PosIssue 自身のリポジトリのキーを入れる */
+  DEMO_KEY?: string;
 }
 
 export interface ServerConfig {
@@ -224,8 +226,13 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       if (req.method === "GET" && path === "/setup") return setup(url, env);
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
-        return html(messagePage("PosIssue", `<p>GitHub アカウントがなくても、ウィジェットから Issue を送れるようにします。</p>
-<p><a href="https://github.com/apps/${esc(env.GITHUB_APP_SLUG)}/installations/new">GitHub App をインストールする</a></p>`));
+        const nonce = crypto.randomUUID().replace(/-/g, "");
+        return html(landingPage({
+          origin: url.origin, appSlug: env.GITHUB_APP_SLUG, demoKey: env.DEMO_KEY, nonce,
+          repoUrl: "https://github.com/ninjin0802/posissue",
+        }), {
+          "content-security-policy": `default-src 'none'; script-src 'self' 'nonce-${nonce}'; style-src 'unsafe-inline'; frame-src 'self'; connect-src 'self'; img-src 'self'`,
+        });
       }
       return new Response("Not found", { status: 404 });
     },

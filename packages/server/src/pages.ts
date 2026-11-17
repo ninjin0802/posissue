@@ -11,7 +11,7 @@ const STYLE = `
 @media (prefers-color-scheme:dark){:root{--bg:#0e0e14;--card:#17171f;--fg:#ececf3;--muted:#9a9aab;--line:#2a2a36;--field:#1c1c26;
 --accent:#8b8bf5;--accent-fg:#0e0e14;--accent-soft:rgba(139,139,245,.16);--err:#ff6b81;--ok:#4cd498;--shadow:none}}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--fg)}
+html,body{margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden}
 body{font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding:20px 16px 28px;-webkit-font-smoothing:antialiased}
 .wrap{max-width:520px;margin:0 auto}
 header{margin-bottom:18px}
@@ -150,4 +150,142 @@ table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid v
 code,pre{background:var(--accent-soft);border-radius:6px;font-family:ui-monospace,Menlo,monospace;font-size:13px}code{padding:2px 6px}pre{padding:12px;overflow-x:auto}pre code{padding:0;background:none}
 a{color:var(--accent)}</style></head>
 <body><div class="wrap"><div class="card"><h1>${esc(title)}</h1>${bodyHtml}</div></div></body></html>`;
+}
+
+const LANDING_STYLE = `
+:root{--bg:#fbfbfe;--fg:#16161d;--muted:#5f5f70;--line:#e6e6ef;--card:#fff;--accent:#5b5bd6;--accent2:#c05bd6;--soft:rgba(91,91,214,.1);--code:#14141c;--codefg:#e6e6f0}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--fg:#ececf3;--muted:#9d9db0;--line:#24242f;--card:#14141c;--accent:#8b8bf5;--accent2:#d58bf5;--soft:rgba(139,139,245,.12);--code:#101018}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}.w{max-width:1080px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:0;z-index:5;backdrop-filter:saturate(1.6) blur(12px);background:color-mix(in srgb,var(--bg) 80%,transparent);border-bottom:1px solid var(--line)}
+nav .w{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-weight:800;letter-spacing:-.02em;font-size:18px;text-decoration:none;display:flex;gap:8px;align-items:center}
+.logo i{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:inline-block}
+nav .links{display:flex;gap:18px;font-size:14px}nav .links a{text-decoration:none;color:var(--muted)}nav .links a:hover{color:var(--fg)}
+.hero{position:relative;overflow:hidden;padding:88px 0 72px}
+.hero:before{content:"";position:absolute;inset:-40% -10% auto;height:640px;background:radial-gradient(closest-side,var(--soft),transparent),radial-gradient(closest-side at 70% 40%,rgba(192,91,214,.10),transparent);pointer-events:none}
+.hero .w{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.pill{display:inline-block;font-size:13px;padding:4px 12px;border-radius:999px;background:var(--soft);color:var(--accent);font-weight:600;margin-bottom:18px}
+h1{font-size:clamp(30px,4.6vw,52px);line-height:1.12;letter-spacing:-.03em;margin:0 0 18px}
+h1 span,h1 em{white-space:nowrap}h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:18px;color:var(--muted);margin:0 0 30px;max-width:34em}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:600;text-decoration:none;font-size:15px;border:1.5px solid var(--line);background:var(--card)}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 24px rgba(91,91,214,.3)}
+@media (prefers-color-scheme:dark){.btn.p{color:#0b0b11}}
+.btn:hover{transform:translateY(-1px)}.btn{transition:transform .15s}
+.demo{border:1px solid var(--line);border-radius:20px;background:var(--card);box-shadow:0 30px 80px rgba(20,20,60,.12);overflow:hidden;height:560px}
+.demo iframe{border:0;width:100%;height:100%}
+.mock{padding:22px}.mock b{display:block;margin-bottom:12px}.mock span{display:block;height:40px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:12px}.mock span.t{height:110px}.mock span.s{background:var(--accent);border:0}
+section{padding:72px 0}h2{font-size:clamp(26px,3.6vw,36px);letter-spacing:-.02em;margin:0 0 10px;line-height:1.25}
+.sub{color:var(--muted);margin:0 0 36px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:22px}
+.card .ic{font-size:24px}.card h3{font-size:17px;margin:8px 0 6px}.card p{margin:0;color:var(--muted);font-size:14px}
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.steps .card:before{counter-increment:s;content:counter(s);display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--accent);font-weight:800;margin-bottom:6px}
+.tabs{display:flex;gap:6px;margin-bottom:-1px}
+.tabs button{font:inherit;font-size:14px;padding:8px 14px;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--code);color:var(--codefg);border-color:var(--code)}
+pre{margin:0;background:var(--code);color:var(--codefg);border-radius:0 14px 14px 14px;padding:20px 22px;overflow-x:auto;font:13.5px/1.7 ui-monospace,Menlo,monospace}
+pre.solo{border-radius:14px}.k{color:#c4a7ff}.s{color:#9ee6a8}.c{color:#7d7d92}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.flow{display:flex;flex-wrap:wrap;gap:8px}.flow span{font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+.flow span:last-child{background:var(--accent);color:#fff;border-color:var(--accent)}
+.final{text-align:center;border:1px solid var(--line);border-radius:24px;padding:56px 20px;background:linear-gradient(135deg,var(--soft),transparent)}
+.final .cta{justify-content:center}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}footer .w{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+@media (max-width:860px){.hero .w,.two{grid-template-columns:1fr}.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}nav .links a.h{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}`;
+
+/** 公式ホストのトップページ。demoKey があればフォームの実物を埋め込み、ウィジェットも置く（自分自身への報告になる）。 */
+export function landingPage(o: { origin: string; appSlug: string; demoKey?: string; repoUrl: string; nonce: string }) {
+  const install = `https://github.com/apps/${encodeURIComponent(o.appSlug)}/installations/new`;
+  const demo = o.demoKey
+    ? `<iframe src="/r/${esc(o.demoKey)}?kinds=bug,feature,other" title="PosIssue デモフォーム" loading="lazy"></iframe>`
+    : `<div class="mock" aria-hidden="true"><b>フィードバックを送る</b><span></span><span class="t"></span><span class="t"></span><span class="s"></span></div>`;
+  const o_ = esc(o.origin);
+  const codes: [string, string][] = [
+    ["Web サイト", `<span class="c">&lt;!-- &lt;/body&gt; の前に 1 行 --&gt;</span>
+&lt;script src=<span class="s">"${o_}/widget.js"</span>
+        data-key=<span class="s">"pk_xxx"</span> async&gt;&lt;/script&gt;`],
+    ["npm", `<span class="k">import</span> { init } <span class="k">from</span> <span class="s">"posissue"</span>;
+
+init({
+  projectKey: <span class="s">"pk_xxx"</span>,
+  endpoint: <span class="s">"${o_}"</span>,
+  meta: { appVersion: <span class="s">"1.2.0"</span> },
+});`],
+    ["アプリ", `<span class="c">// iOS / Android / Flutter / Electron … WebView で開くだけ</span>
+${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
+  ];
+  return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>PosIssue — GitHub アカウントなしで Issue を送れるウィジェット</title>
+<meta name="description" content="サイトやアプリに 1 行置くだけ。利用者のバグ報告や要望が、あなたの OSS リポジトリに GitHub Issue として届きます。">
+<style>${LANDING_STYLE}</style></head><body>
+<nav><div class="w"><a class="logo" href="/"><i></i>PosIssue</a><div class="links">
+<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
+<header class="hero"><div class="w"><div>
+<span class="pill">OSS のための報告ウィジェット</span>
+<h1><span>アカウントがなくても、</span><br><em>だれでも Issue を。</em></h1>
+<p class="lead">サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。</p>
+<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="${esc(o.repoUrl)}">ソースを見る</a></div>
+</div><div class="demo">${demo}</div></div></header>
+
+<section id="features"><div class="w">
+<h2>報告のハードルを、ゼロに。</h2><p class="sub">GitHub に登録していない利用者の声も、取りこぼさずに集められます。</p>
+<div class="grid">
+<div class="card"><div class="ic">🙋</div><h3>アカウント不要</h3><p>報告する人は GitHub に登録しなくても送れます。個人情報も集めません。</p></div>
+<div class="card"><div class="ic">🧩</div><h3>1 行で導入</h3><p>script タグを貼るか init() を呼ぶだけ。アプリは WebView で URL を開くだけです。</p></div>
+<div class="card"><div class="ic">📐</div><h3>フォームは型で決まる</h3><p>FormTemplate を渡すと、画面・入力チェック・Issue 本文の形がそろって決まります。</p></div>
+<div class="card"><div class="ic">🛡️</div><h3>スパム対策つき</h3><p>Turnstile、投稿数の制限、重複検出、@メンションの無効化を最初から備えています。</p></div>
+<div class="card"><div class="ic">🌗</div><h3>きれいなフォーム</h3><p>ライト/ダーク自動切替、日本語・英語対応。どのサイトにもなじみます。</p></div>
+<div class="card"><div class="ic">🔓</div><h3>オープンソース</h3><p>MIT ライセンス。Cloudflare Workers に自分でデプロイすることもできます。</p></div>
+</div></div></section>
+
+<section id="start"><div class="w">
+<h2>3 ステップではじめる</h2><p class="sub">数分で、最初の報告が届きます。</p>
+<div class="steps">
+<div class="card"><h3>App をインストール</h3><p>GitHub App をリポジトリに入れると、projectKey が発行されます。</p></div>
+<div class="card"><h3>ウィジェットを置く</h3><p>サイトなら 1 行、アプリなら URL を開くだけ。</p></div>
+<div class="card"><h3>Issue が届く</h3><p>via-widget ラベル付きで、環境情報もそろった Issue になります。</p></div>
+</div>
+<div style="margin-top:28px"><div class="tabs" role="tablist">${codes.map(([n], i) =>
+  `<button role="tab" aria-selected="${i === 0}" data-i="${i}">${n}</button>`).join("")}</div>
+${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : ""}>${c}</pre>`).join("")}</div>
+</div></section>
+
+<section><div class="w two"><div>
+<h2>フォームは、型を書くだけ。</h2>
+<p class="sub">項目の種類は text / textarea / select / checkbox。書き間違いはエディタが教えてくれて、起動時にもチェックされます。</p>
+</div><pre class="solo"><span class="k">const</span> forms: FormTemplate[] = [{
+  kind: <span class="s">"bug"</span>,
+  label: { en: <span class="s">"Bug"</span>, ja: <span class="s">"バグ報告"</span> },
+  fields: [
+    { id: <span class="s">"steps"</span>, type: <span class="s">"textarea"</span>, required: <span class="k">true</span>,
+      label: { en: <span class="s">"Steps"</span>, ja: <span class="s">"再現手順"</span> } },
+  ],
+}];
+
+<span class="k">export default</span> createHandler({ forms });</pre></div></section>
+
+<section><div class="w">
+<h2>スパムは、届く前に止める。</h2><p class="sub">安い検査から順に行い、どれかに引っかかった時点で止めます。</p>
+<div class="flow"><span>入力チェック</span><span>ハニーポット</span><span>送信速度</span><span>URL の数</span><span>埋め込み元</span><span>IP ごとの制限</span><span>Turnstile</span><span>1 日の上限</span><span>重複検出</span><span>Issue 作成</span></div>
+</div></section>
+
+<section><div class="w"><div class="final">
+<h2>利用者の声を、もっと近くに。</h2><p class="sub">無料で、いますぐ始められます。</p>
+<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
+</div></div></section>
+
+<footer><div class="w"><span>© PosIssue · MIT License</span><a href="${esc(o.repoUrl)}">github.com/ninjin0802/posissue</a></div></footer>
+<script nonce="${o.nonce}">
+document.querySelectorAll("[role=tab]").forEach(function(b){b.addEventListener("click",function(){
+document.querySelectorAll("[role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b)});
+document.querySelectorAll("[data-p]").forEach(function(p){p.hidden=p.dataset.p!==b.dataset.i})})});
+</script>
+${o.demoKey ? `<script src="/widget.js" data-key="${esc(o.demoKey)}" async></script>` : ""}
+</body></html>`;
 }

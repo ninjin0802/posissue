@@ -42,13 +42,15 @@ describe("assertForms", () => {
 
 describe("buildIssue", () => {
   it("builds sections from the form type, neutralizes mentions, escapes meta", () => {
-    const r = parseReportRequest({ ...base, fields: { steps: "ping @octocat #12", actual: "boom" }, meta: { page: "a|b`c" } })!;
+    const r = parseReportRequest({ ...base, fields: { steps: "ping @octocat #12", actual: "boom" }, meta: { page: "a|b`c", x: "<a href=https://spam>", y: "[x](https://e)" } })!;
     const i = buildIssue(r, DEFAULT_FORMS, ["extra"]);
     expect(i.title).toBe("[Bug] Save fails");
     expect(i.labels).toEqual(["via-widget", "bug", "extra"]);
     expect(i.body).toContain("### Steps to reproduce\n\nping @​octocat #​12");
     expect(i.body).not.toContain("### Expected behavior");
-    expect(i.body).toContain("| page | a\\|b\\`c |");
+    expect(i.body).toContain("| x | <code>&#60;a href=https&#58;//spam&#62;</code> |");
+    expect(i.body).toContain("| y | <code>&#91;x&#93;&#40;https&#58;//e&#41;</code> |");
+    expect(i.body).toContain("| page | <code>a&#124;b&#96;c</code> |");
   });
   it("counts urls across all fields", () => {
     expect(reportUrls({ kind: "bug", title: "http://a", fields: { x: "www.b https://c" } })).toBe(3);

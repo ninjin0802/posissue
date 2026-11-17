@@ -157,6 +157,10 @@ export const neutralize = (s: string) =>
 const cell = (s: string) =>
   neutralize(s).replace(/[|`\\]/g, (c) => "\\" + c).replace(/\r?\n/g, " ");
 
+// meta は報告者が自由に入れられる。Markdown/HTML の記号を全部文字参照にして、リンクにならないようにする（URL 数の制限の抜け道を塞ぐ）
+const code = (s: string) =>
+  `<code>${neutralize(s).replace(/[&<>|[\]()!*_`\\:~]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\r?\n/g, " ")}</code>`;
+
 const PREFIX: Record<ReportKind, string> = { bug: "[Bug]", feature: "[Feature]", other: "[Feedback]" };
 const KIND_LABEL: Record<ReportKind, string> = { bug: "bug", feature: "enhancement", other: "feedback" };
 
@@ -173,7 +177,7 @@ export function buildIssue(r: ReportInput, forms: FormTemplate[] = DEFAULT_FORMS
   const meta = Object.entries(r.meta ?? {});
   const table = meta.length
     ? `\n\n---\n<details><summary>Environment</summary>\n\n| key | value |\n|---|---|\n${meta
-        .map(([k, v]) => `| ${cell(k)} | ${cell(v)} |`).join("\n")}\n</details>`
+        .map(([k, v]) => `| ${cell(k)} | ${code(v)} |`).join("\n")}\n</details>`
     : "\n\n---";
   return {
     title: `${PREFIX[r.kind]} ${neutralize(r.title)}`,

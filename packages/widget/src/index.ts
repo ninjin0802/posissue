@@ -2,7 +2,7 @@
 export type { ReportKind } from "@posissue/core";
 import type { ReportKind } from "@posissue/core";
 
-export const DEFAULT_ENDPOINT = "https://posissue.example"; // 公式ホストのドメインが決まったら差し替える
+export const DEFAULT_ENDPOINT = "https://posissue.2nj.lol";
 
 export interface WidgetConfig {
   projectKey: string;
