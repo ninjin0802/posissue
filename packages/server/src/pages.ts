@@ -61,6 +61,9 @@ button.busy .spin{display:block}
 button.ghost{background:none;border:1.5px solid var(--line);border-radius:10px;padding:9px 16px;color:var(--fg);font:inherit;cursor:pointer}
 footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12px}footer a{color:var(--muted)}
 [hidden]{display:none!important}
+@media (max-width:440px){body{padding:14px 12px 22px}h1{font-size:17px;white-space:nowrap}.sub{font-size:12px}
+.lang button{padding:5px 9px;font-size:11.5px}.kinds{grid-template-columns:1fr 1fr;gap:6px}.kind span{padding:9px 10px}.kind small{display:none}
+.card{padding:14px;border-radius:14px}textarea{min-height:84px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}`;
 
 const GH_ICON = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.23.83 1.23.83.72 1.22 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg>`;
@@ -233,6 +236,46 @@ pre.solo{border-radius:14px}.k{color:#c4a7ff}.s{color:#9ee6a8}.c{color:#7d7d92}
 .final .cta{justify-content:center}
 footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}footer .fl{display:flex;gap:6px 16px;flex-wrap:wrap}footer .fl a{white-space:nowrap}footer .w{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 @media (max-width:860px){.hero .w,.two{grid-template-columns:1fr}.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}nav .links a.h,nav .sep{display:none}}
+/* スマホ：余白を詰め、カードは横並びのコンパクト表示、ボタンは幅いっぱい */
+@media (max-width:640px){
+section{padding:44px 0}
+.w{padding:0 18px}
+nav .w{height:54px}
+.hero{padding:28px 0 36px}
+.hero .w{gap:28px}
+.heroicon{display:none!important}
+.pill{font-size:12px;margin-bottom:14px}
+h1{font-size:31px;line-height:1.2;margin-bottom:14px}
+.lead{font-size:15.5px;margin-bottom:22px}
+.hero .cta{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hero .cta .btn{justify-content:center;padding:13px 10px}
+.hero .cta .btn.p{grid-column:1/-1}
+.npm{display:flex;width:100%;margin-top:12px}
+.npm code{flex:1}
+.demo{height:540px;border-radius:18px}
+h2{font-size:24px}.sub{font-size:14.5px;margin-bottom:22px}
+.grid{gap:10px}
+.grid .card{display:grid;grid-template-columns:40px 1fr;column-gap:12px;align-items:start;padding:16px}
+.grid .card .ic{grid-row:1/3;font-size:24px;line-height:1.2;width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:var(--soft)}
+.grid .card h3{margin:2px 0 2px;font-size:15.5px}
+.grid .card p{font-size:13.5px;line-height:1.65}
+.steps{gap:10px}
+.steps .card{display:grid;grid-template-columns:34px 1fr;column-gap:12px;padding:16px}
+.steps .card:before{grid-row:1/3;margin:0}
+.steps .card h3{margin:3px 0 2px;font-size:15.5px}
+.steps .card p{font-size:13.5px}
+.tabs button{padding:8px 12px;font-size:13px}
+pre{font-size:12.5px;padding:16px}
+.two{gap:18px}
+.flow{gap:6px}.flow span{font-size:12px;padding:5px 10px}
+.author{padding:26px 18px;gap:16px}.av{width:80px;height:80px}.author h2{font-size:22px}.bio{font-size:14.5px}
+.final{padding:36px 18px;border-radius:20px}
+.final h2{font-size:22px;word-break:keep-all;overflow-wrap:anywhere}
+.final .cta{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.final .cta .btn{justify-content:center}.final .cta .btn.p{grid-column:1/-1}
+footer{padding:22px 0 32px}footer .w{flex-direction:column;align-items:flex-start;gap:12px}
+footer .fl{gap:8px 18px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}`;
 
 /** 公式ホストのトップページ。demoKey があればフォームの実物を埋め込み、ウィジェットも置く（自分自身への報告になる）。 */
@@ -287,7 +330,7 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <a class="ib" href="/admin" aria-label="${t("管理画面", "Dashboard")}" title="${t("管理画面", "Dashboard")}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
 <a class="ib" href="${esc(o.repoUrl)}" aria-label="GitHub" title="GitHub">${GH_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</a></div></div></nav>
 <header class="hero"><div class="w"><div>
-<img src="/icon.svg?v=2" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(13,17,23,.35))"><span class="pill">${t("OSS のための報告ウィジェット", "A feedback widget for open source")}</span>
+<img class="heroicon" src="/icon.svg?v=2" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(13,17,23,.35))"><span class="pill">${t("OSS のための報告ウィジェット", "A feedback widget for open source")}</span>
 <h1>${t("<span>アカウントがなくても、</span><br><em>だれでも Issue を。</em>", "<span>No account needed.</span><br><em>Anyone can file an issue.</em>")}</h1>
 <p class="lead">${t("サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。", "Add one line to your site or app. Bug reports and feature requests from your users arrive in your repository as GitHub issues.")}</p>
 <div class="cta"><a class="btn p" href="${esc(install)}">${t("GitHub App をインストール →", "Install the GitHub App →")}</a><a class="btn" href="/admin">${t("管理画面", "Dashboard")}</a><a class="btn" href="${esc(o.repoUrl)}">${t("ソースを見る", "View source")}</a></div>
@@ -427,7 +470,12 @@ h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px}.lead{margin:0;color:var(
 .addrepo{display:block;padding:12px 16px;border-top:1px solid var(--line);font-size:13px;font-weight:600;text-decoration:none}
 .detail .card{margin:0}
 .head .gh{margin-left:auto;text-decoration:none;font-size:12.5px;padding:6px 12px}
-@media (max-width:760px){.layout{grid-template-columns:1fr}.side{position:static;max-height:none}.rlist{display:flex;overflow-x:auto;gap:6px;padding:8px}.ri{flex:0 0 auto;width:auto;max-width:220px;border:1px solid var(--line)}}
+@media (max-width:760px){main{padding:18px 14px 48px}.hero{margin-bottom:14px}h1{font-size:22px}.lead{font-size:12.5px}
+.stats{gap:8px}.stat{padding:8px 12px;min-width:0;border-radius:12px}.stat b{font-size:18px}.stat span{font-size:11px}
+.head{flex-wrap:nowrap;padding:14px 16px 0}.head h2{min-width:0;font-size:15px}.head h2 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.head .own{display:none}.head .badge{flex-shrink:0}.head .gh{padding:6px 10px;font-size:12px;white-space:nowrap}
+.tabs{padding:8px 10px 0}.panel{padding:14px 16px 16px}
+.layout{grid-template-columns:1fr}.side{position:static;max-height:none}.rlist{display:flex;overflow-x:auto;gap:6px;padding:8px}.ri{flex:0 0 auto;width:auto;max-width:220px;border:1px solid var(--line)}}
 .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px}
 #q{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);font:inherit;font-size:14px}
 #q:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
@@ -437,7 +485,7 @@ h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px}.lead{margin:0;color:var(
 .chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .none{text-align:center;color:var(--muted);padding:24px}
 .card[hidden]{display:none}
-.head h2{display:flex;align-items:center;gap:8px;font-size:16px;margin:0;word-break:break-all}
+.head h2{display:flex;align-items:center;gap:8px;font-size:16px;margin:0;word-break:break-all}.head .own{font-style:normal}
 .badge{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .badge.ap{color:var(--accent);background:var(--soft);border-color:transparent}
 .badge.off{color:var(--err);border-color:currentColor}
@@ -552,7 +600,7 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
 <span class="rn"><b>${esc(r.repo.split("/")[1] ?? r.repo)}</b><small>${esc(r.repo.split("/")[0])}</small></span>
 <span class="rm">${pend.length ? `<span class="pc" data-pcount>${pend.length}</span>` : ""}${r.canEdit ? `<span class="mt${r.approval ? " ap" : ""}" data-mode>${r.approval ? t("承認", "Review") : t("即時", "Instant")}</span>` : ""}</span></button>`);
     return `<section class="card" id="${id}" role="tabpanel" aria-labelledby="${id}-ri" aria-label="${esc(r.repo)}" data-repo="${esc(r.repo)}" hidden>
-<div class="head static"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
+<div class="head static"><h2>${GH_ICON}<span><i class="own">${esc(r.repo.split("/")[0])}/</i>${esc(r.repo.split("/")[1] ?? "")}</span></h2>
 ${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? t("承認モード", "Review first") : t("すぐに起票", "Instant")}</span>` : ""}
 <a class="ghost gh" href="https://github.com/${esc(r.repo)}/issues" target="_blank" rel="noopener">${t("Issue を見る ↗", "Open issues ↗")}</a></div>
 <div class="body">
@@ -574,8 +622,8 @@ ${o.justInstalled ? `<div class="ok-banner" role="status">✅ ${t("インスト�
 <div class="stats"><div class="stat"><b>${o.rows.filter((r) => r.key).length}</b><span>${t("リポジトリ", "Repositories")}</span></div>
 <div class="stat${totalPending ? " hot" : ""}"><b>${totalPending}</b><span>${t("承認待ち", "Pending")}</span></div></div></div>
 ${o.rows.length ? `<div class="layout">
-<aside class="side"><div class="side-top"><input type="search" id="q" placeholder="${t("リポジトリを検索", "Search repositories")}" aria-label="${t("リポジトリを検索", "Search repositories")}" autocomplete="off">
-<div class="chips" role="group" aria-label="${t("絞り込み", "Filter")}"><button type="button" class="chip" aria-pressed="true" data-f="">${t("すべて", "All")}</button><button type="button" class="chip" aria-pressed="false" data-f="pending">${t("承認待ち", "Pending")}</button><button type="button" class="chip" aria-pressed="false" data-f="approval">${t("承認モード", "Review")}</button><button type="button" class="chip" aria-pressed="false" data-f="instant">${t("すぐに起票", "Instant")}</button></div></div>
+<aside class="side">${rows.length > 5 ? `<div class="side-top"><input type="search" id="q" placeholder="${t("リポジトリを検索", "Search repositories")}" aria-label="${t("リポジトリを検索", "Search repositories")}" autocomplete="off">
+<div class="chips" role="group" aria-label="${t("絞り込み", "Filter")}"><button type="button" class="chip" aria-pressed="true" data-f="">${t("すべて", "All")}</button><button type="button" class="chip" aria-pressed="false" data-f="pending">${t("承認待ち", "Pending")}</button><button type="button" class="chip" aria-pressed="false" data-f="approval">${t("承認モード", "Review")}</button><button type="button" class="chip" aria-pressed="false" data-f="instant">${t("すぐに起票", "Instant")}</button></div></div>` : ""}
 <div class="rlist" role="tablist" aria-orientation="vertical" aria-label="${t("リポジトリ", "Repositories")}">${side.join("")}</div>
 <p class="none" id="none" hidden>${t("条件に合うリポジトリはありません。", "No repositories match.")}</p>
 <a class="addrepo" href="${esc(install)}">＋ ${t("リポジトリを追加・変更", "Manage repositories")}</a></aside>
