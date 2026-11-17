@@ -8,7 +8,7 @@
   "d1_databases": [{ "binding": "DB", "database_name": "posissue", "database_id": "eb9153ed-c265-475a-ab92-82e9865edbb5", "migrations_dir": "migrations" }],
   // 7.1 #7: IP ごと 1 分に 2 件
   "ratelimits": [{ "name": "RL_IP", "namespace_id": "1001", "simple": { "limit": 2, "period": 60 } }],
-  // secrets: GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET, TURNSTILE_SECRET
+  // secrets: GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET, GITHUB_CLIENT_SECRET, TURNSTILE_SECRET
   // DEMO_KEY: PosIssue 自身のリポジトリの projectKey（セットアップ後に入れる）
-  "vars": { "GITHUB_APP_SLUG": "posissue", "TURNSTILE_SITE_KEY": "0x4AAAAAAGEggDy8CtSQzjEr", "DEMO_KEY": "pk_xBxWbYo2IwS2uuJdS375jJck" }
+  "vars": { "GITHUB_APP_SLUG": "posissue", "GITHUB_CLIENT_ID": "Iv23liLH0ndBpU6iA84X", "TURNSTILE_SITE_KEY": "0x4AAAAAAGEggDy8CtSQzjEr", "DEMO_KEY": "pk_xBxWbYo2IwS2uuJdS375jJck" }
 }

@@ -52,6 +52,7 @@ button.send:disabled{opacity:.6;cursor:default}
 .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:s .7s linear infinite;display:none}
 button.busy .spin{display:block}
 @keyframes s{to{transform:rotate(360deg)}}
+.note{margin:10px 0 0;font-size:12px;color:var(--muted);text-align:center}
 #msg{min-height:1.4em;margin:10px 0 0;font-size:13px;text-align:center}#msg.err{color:var(--err)}
 .done{text-align:center;padding:28px 8px}
 .done svg{color:var(--ok)}
@@ -83,6 +84,7 @@ export function formPage(o: { projectKey: string; repo: string; siteKey: string;
 <div class="hp" aria-hidden="true"><input type="text" name="hp" tabindex="-1" autocomplete="off"></div>
 <div class="ts"><div class="cf-turnstile" data-sitekey="${esc(o.siteKey)}" data-theme="auto" data-size="flexible"></div></div>
 <button type="submit" class="send"><span class="spin" aria-hidden="true"></span><span data-t="send"></span></button>
+<p class="note" data-t="note"></p>
 <p id="msg" role="status" aria-live="polite"></p>
 </div>
 </form>
@@ -94,6 +96,7 @@ export function formPage(o: { projectKey: string; repo: string; siteKey: string;
 (function(){
 var C=${cfg},t0=Date.now(),L=C.lang||((navigator.language||"").slice(0,2)==="ja"?"ja":"en");
 var T={title:["Title","タイトル"],send:["Send report","送信する"],thanks:["Thank you!","送信しました"],again:["Send another","もう一件送る"],
+note:["Your report, the page URL and browser info will be posted as an issue in this repository.","送信した内容と、ページの URL・ブラウザの情報が、このリポジトリの Issue に掲載されます。"],
 foot:["No GitHub account needed · Powered by PosIssue","GitHub アカウントは不要です · Powered by PosIssue"],h:["Send feedback","フィードバックを送る"],
 sent:["Your report was posted as issue #","Issue #"],sent2:[".","として登録されました。"],
 required:["Please fill in the required fields.","必須項目を入力してください。"],

@@ -56,6 +56,9 @@ describe("buildIssue", () => {
   });
   it("counts urls across all fields", () => {
     expect(reportUrls({ kind: "bug", title: "http://a", fields: { x: "www.b https://c" } })).toBe(3);
+    // Markdown のリンク・画像、プロトコル相対 URL も数える
+    expect(reportUrls({ kind: "bug", title: "t", fields: { x: "[a](//e.com) ![b](/img) <img src=//t.co/x> see //evil.com" } })).toBe(4);
+    expect(reportUrls({ kind: "bug", title: "t", fields: { x: "a // comment and path/to//file" } })).toBe(0);
     expect(neutralize("mail a@b")).toBe("mail a@​b");
   });
 });
