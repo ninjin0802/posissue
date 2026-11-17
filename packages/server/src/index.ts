@@ -40,7 +40,8 @@ const STATUS: Record<ErrorCode, number> = {
 };
 
 const WIDGET_JS =
-  `(function(){var s=document.currentScript;if(!s)return;var mount=${mount.toString()};` +
+  // wrangler(esbuild) の keepNames が関数本体に __name(...) を差し込むので、toString した先でも動くよう同名の素通し関数を置く
+  `(function(){var __name=function(f){return f};var s=document.currentScript;if(!s)return;var mount=${mount.toString()};` +
   `var go=function(){mount({projectKey:s.dataset.key,endpoint:new URL(s.src).origin,position:s.dataset.position,label:s.dataset.label,` +
   `kinds:s.dataset.kinds?s.dataset.kinds.split(","):undefined})};document.body?go():addEventListener("DOMContentLoaded",go)})();`;
 
