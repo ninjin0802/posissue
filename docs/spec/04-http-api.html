@@ -6,6 +6,7 @@
 <table>
 <tr><th>メソッド</th><th>パス</th><th>内容</th></tr>
 <tr><td>GET</td><td><code>/widget.js</code></td><td>ブラウザ用ウィジェット本体</td></tr>
+<tr><td>GET</td><td><code>/author.png</code></td><td>トップページ「作った人」のアイコン（GitHub のアイコンを保存した静的ファイル。外部の画像を読み込まないため）</td></tr>
 <tr><td>GET</td><td><code>/changelog</code></td><td>リリースノート（静的ファイル。元データは <code>CHANGELOG.md</code>。リリースのたびに両方と GitHub Releases を更新する）</td></tr>
 <tr><td>GET</td><td><code>/privacy</code>・<code>/terms</code></td><td>プライバシーポリシー・利用規約。公式ホストの静的ファイル（<code>apps/hosted/public/*.html</code>）。トップ・フォーム・キー確認画面のフッターからリンクする。収集する情報を変えたら必ず更新する</td></tr>
 <tr><td>GET</td><td><code>/llms.txt</code></td><td>AI コーディングエージェント向けの導入手順（英語、プレーンテキスト）。公式ホストの静的ファイル</td></tr>
