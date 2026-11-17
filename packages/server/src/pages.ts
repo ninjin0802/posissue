@@ -393,6 +393,26 @@ h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px}.lead{margin:0;color:var(
 .chev{margin-left:auto;width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;flex-shrink:0}
 .head[aria-expanded=true] .chev{transform:rotate(-135deg)}
 .badge.hot{color:var(--accent-fg);background:var(--accent);border-color:transparent}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:16px;align-items:start}
+.side{position:sticky;top:74px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 92px)}
+.side-top{padding:12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.side #q{min-width:0;width:100%;padding:8px 12px;font-size:13.5px}
+.side .chips{gap:4px}.side .chip{padding:5px 9px;font-size:11.5px}
+.rlist{overflow-y:auto;padding:6px}
+.ri{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;color:var(--fg);text-align:left;font:inherit;padding:10px 12px;border-radius:12px;cursor:pointer}
+.ri:hover{background:var(--field)}.ri[aria-selected=true]{background:var(--soft)}
+.ri[aria-selected=true] b{color:var(--accent)}
+.ri:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rn{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
+.rn b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rn small{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rm{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.pc{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-size:11.5px;font-weight:700;display:inline-grid;place-items:center}
+.mt{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}.mt.ap{color:var(--accent);border-color:transparent;background:var(--soft)}
+.rm .off{font-size:11px;color:var(--err);font-weight:700}
+.addrepo{display:block;padding:12px 16px;border-top:1px solid var(--line);font-size:13px;font-weight:600;text-decoration:none}
+.detail .card{margin:0}
+.head .gh{margin-left:auto;text-decoration:none;font-size:12.5px;padding:6px 12px}
+@media (max-width:760px){.layout{grid-template-columns:1fr}.side{position:static;max-height:none}.rlist{display:flex;overflow-x:auto;gap:6px;padding:8px}.ri{flex:0 0 auto;width:auto;max-width:220px;border:1px solid var(--line)}}
 .tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px}
 #q{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);font:inherit;font-size:14px}
 #q:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
@@ -465,14 +485,16 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
   const readable = (b: string) => b.replace(/^### /gm, "■ ").replace(/<\/?details>|<\/?summary>/g, "").replace(/\n---\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const fmt = (t: number) => new Date(t * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC";
   let uid = 0;
-  // 承認待ちが多い順 → 停止中は最後 → 名前順。リポジトリが少なければ全部開き、多ければ承認待ちのあるものだけ開く
+  // 承認待ちが多い順 → 停止中は最後 → 名前順。左の一覧で選んだ 1 つだけを右に出す
   const rows = [...o.rows].sort((a, b) =>
     (b.pending?.length ?? 0) - (a.pending?.length ?? 0) || Number(!a.key) - Number(!b.key) || a.repo.localeCompare(b.repo));
-  const openAll = rows.length <= 3;
+  const side: string[] = [];
   const cards = rows.map((r) => {
     const id = `c${uid++}`;
     if (!r.key) {
-      return `<section class="card" data-name="${esc(r.repo.toLowerCase())}" data-f="stopped"><div class="head static"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><span class="badge off">${t("停止中", "Suspended")}</span></div>
+      side.push(`<button type="button" class="ri" role="tab" id="${id}-ri" aria-controls="${id}" data-name="${esc(r.repo.toLowerCase())}" data-f="stopped">
+<span class="rn"><b>${esc(r.repo.split("/")[1] ?? r.repo)}</b><small>${esc(r.repo.split("/")[0])}</small></span><span class="rm"><span class="off">${t("停止中", "Suspended")}</span></span></button>`);
+      return `<section class="card" id="${id}" role="tabpanel" aria-labelledby="${id}-ri" hidden><div class="head static"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><span class="badge off">${t("停止中", "Suspended")}</span></div>
 <p class="note" style="padding-top:12px">${t("このリポジトリは運営により停止されています。", "This repository has been suspended by the operator.")}</p></section>`;
     }
     const tag = `<script src="${o.origin}/widget.js" data-key="${r.key}" async></script>`;
@@ -510,13 +532,15 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
 <div class="blk"><label class="lbl" for="${id}-l">${t("1 日に受け付ける件数の上限（1〜1000）", "Daily limit (1–1000)")}</label>
 <input id="${id}-l" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="${t("既定", "Default")} ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}"></div>
 <div class="save-row"><button type="submit" class="btn">${t("保存", "Save")}</button><span class="st" role="status" aria-live="polite"></span></div></form>`);
-    const open = openAll || pend.length > 0;
     const flags = [pend.length ? "pending" : "", r.approval ? "approval" : "instant"].filter(Boolean).join(" ");
-    return `<section class="card" aria-label="${esc(r.repo)}" data-name="${esc(r.repo.toLowerCase())}" data-f="${flags}">
-<button type="button" class="head" aria-expanded="${open}" aria-controls="${id}-body"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
+    side.push(`<button type="button" class="ri" role="tab" id="${id}-ri" aria-controls="${id}" data-name="${esc(r.repo.toLowerCase())}" data-f="${flags}">
+<span class="rn"><b>${esc(r.repo.split("/")[1] ?? r.repo)}</b><small>${esc(r.repo.split("/")[0])}</small></span>
+<span class="rm">${pend.length ? `<span class="pc" data-pcount>${pend.length}</span>` : ""}${r.canEdit ? `<span class="mt${r.approval ? " ap" : ""}" data-mode>${r.approval ? t("承認", "Review") : t("即時", "Instant")}</span>` : ""}</span></button>`);
+    return `<section class="card" id="${id}" role="tabpanel" aria-labelledby="${id}-ri" aria-label="${esc(r.repo)}" data-repo="${esc(r.repo)}" hidden>
+<div class="head static"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
 ${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? t("承認モード", "Review first") : t("すぐに起票", "Instant")}</span>` : ""}
-${pend.length ? `<span class="badge hot" data-pcount>${t("承認待ち", "Pending")} ${pend.length}</span>` : ""}<span class="chev" aria-hidden="true"></span></button>
-<div class="body" id="${id}-body"${open ? "" : " hidden"}>
+<a class="ghost gh" href="https://github.com/${esc(r.repo)}/issues" target="_blank" rel="noopener">${t("Issue を見る ↗", "Open issues ↗")}</a></div>
+<div class="body">
 <div class="tabs" role="tablist">${tabs.map(([k, label, extra]) =>
   `<button type="button" class="tab" role="tab" id="${id}-t-${k}" aria-controls="${id}-${k}" aria-selected="${k === first}" tabindex="${k === first ? 0 : -1}">${label}${extra}</button>`).join("")}</div>
 ${setupPanel}${pendingPanel}${settingsPanel}
@@ -534,18 +558,19 @@ ${o.justInstalled ? `<div class="ok-banner" role="status">✅ ${t("インスト�
 <div class="hero"><div><h1>${t("管理画面", "Dashboard")}</h1><p class="lead">${t("GitHub で確認できた、あなたがアクセスできるリポジトリだけを表示しています。", "Only repositories you can access on GitHub are shown.")}</p></div>
 <div class="stats"><div class="stat"><b>${o.rows.filter((r) => r.key).length}</b><span>${t("リポジトリ", "Repositories")}</span></div>
 <div class="stat${totalPending ? " hot" : ""}"><b>${totalPending}</b><span>${t("承認待ち", "Pending")}</span></div></div></div>
-${rows.length > 3 ? `<div class="tools"><input type="search" id="q" placeholder="${t("リポジトリを検索", "Search repositories")}" aria-label="${t("リポジトリを検索", "Search repositories")}" autocomplete="off">
-<div class="chips" role="group" aria-label="${t("絞り込み", "Filter")}"><button type="button" class="chip" aria-pressed="true" data-f="">${t("すべて", "All")}</button><button type="button" class="chip" aria-pressed="false" data-f="pending">${t("承認待ちあり", "Has pending")}</button><button type="button" class="chip" aria-pressed="false" data-f="approval">${t("承認モード", "Review first")}</button><button type="button" class="chip" aria-pressed="false" data-f="instant">${t("すぐに起票", "Instant")}</button></div>
-<button type="button" class="ghost toggle" id="all">${t("すべて開く", "Expand all")}</button></div>
-<p class="none" id="none" hidden>${t("条件に合うリポジトリはありません。", "No repositories match.")}</p>` : ""}
-${o.rows.length ? `<div id="cards">${cards}</div>` : empty}
-${o.rows.length ? `<div class="addcard"><span>${t("別のリポジトリにも入れる・外す", "Add or remove repositories")}</span><a class="ghost" style="text-decoration:none" href="${esc(install)}">${t("リポジトリを追加・変更", "Manage repositories")}</a></div>` : ""}
+${o.rows.length ? `<div class="layout">
+<aside class="side"><div class="side-top"><input type="search" id="q" placeholder="${t("リポジトリを検索", "Search repositories")}" aria-label="${t("リポジトリを検索", "Search repositories")}" autocomplete="off">
+<div class="chips" role="group" aria-label="${t("絞り込み", "Filter")}"><button type="button" class="chip" aria-pressed="true" data-f="">${t("すべて", "All")}</button><button type="button" class="chip" aria-pressed="false" data-f="pending">${t("承認待ち", "Pending")}</button><button type="button" class="chip" aria-pressed="false" data-f="approval">${t("承認モード", "Review")}</button><button type="button" class="chip" aria-pressed="false" data-f="instant">${t("すぐに起票", "Instant")}</button></div></div>
+<div class="rlist" role="tablist" aria-orientation="vertical" aria-label="${t("リポジトリ", "Repositories")}">${side.join("")}</div>
+<p class="none" id="none" hidden>${t("条件に合うリポジトリはありません。", "No repositories match.")}</p>
+<a class="addrepo" href="${esc(install)}">＋ ${t("リポジトリを追加・変更", "Manage repositories")}</a></aside>
+<div class="detail" id="cards">${cards}</div></div>` : empty}
 </main>
 <footer><a href="${docPath(o.lang, "changelog")}">${t("リリースノート", "Changelog")}</a><a href="${docPath(o.lang, "privacy")}">${t("プライバシーポリシー", "Privacy")}</a><a href="${docPath(o.lang, "terms")}">${t("利用規約", "Terms")}</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer>
 <script nonce="${o.nonce}">
 (function(){
 var SESSION=${JSON.stringify(o.session)};
-var M=${JSON.stringify({collapse: t("たたむ", "Collapse"),more: t("全文を見る", "Show all"),copy: t("コピー", "Copy"),copied: t("コピー済み", "Copied"),copyFail: t("選択してコピー", "Select to copy"),expand: t("すべて開く", "Expand all"),collapseAll: t("すべて閉じる", "Collapse all"),saving: t("保存しています…", "Saving…"),saved: t("保存しました", "Saved"),saveFail: t("保存できませんでした。", "Could not save."),net: t("通信に失敗しました。", "Network error."),working: t("処理しています…", "Working…"),fail: t("処理できませんでした。", "Could not complete."),discarded: t("捨てました", "Discarded"),created: t(" を作成しました ↗", " created ↗"),pending: t("承認待ち", "Pending"),review: t("承認モード", "Review first"),instant: t("すぐに起票", "Instant"),invalid_input: t("入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。", "Please check your input (sites like https://example.com, limit 1–1000)."),session_expired: t("時間が経ちました。ページを開き直してください。", "Session expired. Please reload the page."),forbidden: t("このリポジトリは変更できません。", "You can’t change this repository."),rate_limited: t("少し待ってからもう一度お試しください。", "Please wait a moment and try again."),not_found: t("すでに処理されています。", "Already handled."),upstream_error: t("GitHub への起票に失敗しました。時間をおいてお試しください。", "Could not create the issue on GitHub. Please try again later.")}).replace(/</g, "\\u003c")};
+var M=${JSON.stringify({collapse: t("たたむ", "Collapse"),more: t("全文を見る", "Show all"),copy: t("コピー", "Copy"),copied: t("コピー済み", "Copied"),copyFail: t("選択してコピー", "Select to copy"),expand: t("すべて開く", "Expand all"),collapseAll: t("すべて閉じる", "Collapse all"),saving: t("保存しています…", "Saving…"),saved: t("保存しました", "Saved"),saveFail: t("保存できませんでした。", "Could not save."),net: t("通信に失敗しました。", "Network error."),working: t("処理しています…", "Working…"),fail: t("処理できませんでした。", "Could not complete."),discarded: t("捨てました", "Discarded"),created: t(" を作成しました ↗", " created ↗"),pending: t("承認待ち", "Pending"),review: t("承認モード", "Review first"),short_review: t("承認", "Review"),short_instant: t("即時", "Instant"),instant: t("すぐに起票", "Instant"),invalid_input: t("入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。", "Please check your input (sites like https://example.com, limit 1–1000)."),session_expired: t("時間が経ちました。ページを開き直してください。", "Session expired. Please reload the page."),forbidden: t("このリポジトリは変更できません。", "You can’t change this repository."),rate_limited: t("少し待ってからもう一度お試しください。", "Please wait a moment and try again."),not_found: t("すでに処理されています。", "Already handled."),upstream_error: t("GitHub への起票に失敗しました。時間をおいてお試しください。", "Could not create the issue on GitHub. Please try again later.")}).replace(/</g, "\\u003c")};
 var ERR=M;
 function call(path,body){return fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.assign({session:SESSION},body))}).then(function(r){return r.json()})}
 function say(st,cls,text){st.className="st"+(cls?" "+cls:"");st.textContent=text}
@@ -554,16 +579,22 @@ document.querySelectorAll("[role=tablist]").forEach(function(list){var tabs=[].s
 function sel(t){tabs.forEach(function(x){var on=x===t;x.setAttribute("aria-selected",on);x.tabIndex=on?0:-1;document.getElementById(x.getAttribute("aria-controls")).hidden=!on})}
 tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(t)});t.addEventListener("keydown",function(e){var j=e.key==="ArrowRight"?i+1:e.key==="ArrowLeft"?i-1:-1;
 if(j<0&&e.key!=="ArrowLeft")return;j=(j+tabs.length)%tabs.length;sel(tabs[j]);tabs[j].focus();e.preventDefault()})})});
-// 開閉
-function setOpen(h,on){h.setAttribute("aria-expanded",on);document.getElementById(h.getAttribute("aria-controls")).hidden=!on}
-document.querySelectorAll("button.head").forEach(function(h){h.addEventListener("click",function(){setOpen(h,h.getAttribute("aria-expanded")!=="true")})});
-var all=document.getElementById("all");if(all)all.addEventListener("click",function(){var open=all.textContent===M.expand;
-document.querySelectorAll(".card:not([hidden]) button.head").forEach(function(h){setOpen(h,open)});all.textContent=open?M.collapseAll:M.expand});
-// 検索と絞り込み
+// 左の一覧で選ぶ（URL の #r= に覚える）
+var items=[].slice.call(document.querySelectorAll(".ri"));
+function pick(it,focus,scroll){items.forEach(function(x){var on=x===it;x.setAttribute("aria-selected",on);x.tabIndex=on?0:-1;document.getElementById(x.getAttribute("aria-controls")).hidden=!on});
+var c=document.getElementById(it.getAttribute("aria-controls"));if(c&&c.dataset.repo)try{history.replaceState(null,"","#r="+encodeURIComponent(c.dataset.repo))}catch(e){}
+if(focus)it.focus();if(scroll&&innerWidth<=760)c.scrollIntoView({block:"start",behavior:"smooth"})}
+items.forEach(function(it,i){it.addEventListener("click",function(){pick(it,false,true)});it.addEventListener("keydown",function(e){
+var vis=items.filter(function(x){return !x.hidden}),j=vis.indexOf(it);if(e.key==="ArrowDown"||e.key==="ArrowRight")j++;else if(e.key==="ArrowUp"||e.key==="ArrowLeft")j--;else return;
+e.preventDefault();if(vis.length)pick(vis[(j+vis.length)%vis.length],true)})});
+var want=decodeURIComponent((location.hash.match(/#r=(.+)/)||[])[1]||"");
+var start=items.filter(function(x){var c=document.getElementById(x.getAttribute("aria-controls"));return c&&c.dataset.repo===want})[0]||items[0];if(start)pick(start);
+// 検索と絞り込み（一覧だけを絞る）
 var q=document.getElementById("q"),fl="";
-function apply(){var s=(q&&q.value||"").trim().toLowerCase(),n=0;document.querySelectorAll("#cards>.card").forEach(function(c){
-var ok=(!s||c.dataset.name.indexOf(s)>=0)&&(!fl||(" "+c.dataset.f+" ").indexOf(" "+fl+" ")>=0);c.hidden=!ok;if(ok)n++});
-var none=document.getElementById("none");if(none)none.hidden=n>0}
+function apply(){var s=(q&&q.value||"").trim().toLowerCase(),n=0;items.forEach(function(x){
+var ok=(!s||x.dataset.name.indexOf(s)>=0)&&(!fl||(" "+x.dataset.f+" ").indexOf(" "+fl+" ")>=0);x.hidden=!ok;if(ok)n++});
+var none=document.getElementById("none");if(none)none.hidden=n>0;
+var sel=items.filter(function(x){return x.getAttribute("aria-selected")==="true"})[0];if(sel&&sel.hidden){var v=items.filter(function(x){return !x.hidden})[0];if(v)pick(v)}}
 if(q)q.addEventListener("input",apply);
 document.querySelectorAll(".chip").forEach(function(b){b.addEventListener("click",function(){fl=b.dataset.f;
 document.querySelectorAll(".chip").forEach(function(x){x.setAttribute("aria-pressed",x===b)});apply()})});
@@ -577,7 +608,8 @@ var st=f.querySelector(".st"),btn=f.querySelector("[type=submit]"),lim=f.element
 var origins=f.elements.origins.value.split("\\n").map(function(x){return x.trim()}).filter(Boolean);btn.disabled=true;say(st,"",M.saving);
 call("/api/settings",{repo:f.dataset.repo,allowedOrigins:origins,dailyLimit:lim?Number(lim):null,approval:ap}).then(function(r){
 if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\\n");say(st,"ok",M.saved);
-var b=f.closest(".card").querySelector("[data-mode]");if(b){b.textContent=r.approval?M.review:M.instant;b.classList.toggle("ap",r.approval)}}
+var card=f.closest(".card"),b=card.querySelector("[data-mode]");if(b){b.textContent=r.approval?M.review:M.instant;b.classList.toggle("ap",r.approval)}
+var ri=document.getElementById(card.id+"-ri");if(ri){var d=ri.querySelector("[data-mode]");if(d){d.classList.toggle("ap",r.approval);d.textContent=r.approval?M.short_review:M.short_instant}ri.dataset.f=ri.dataset.f.replace(/approval|instant/,r.approval?"approval":"instant")}}
 else say(st,"err",ERR[r.error]||M.saveFail)}).catch(function(){say(st,"err",M.net)}).finally(function(){btn.disabled=false})})});
 // 承認待ち
 var total=document.querySelector(".stat:nth-child(2) b");
@@ -589,7 +621,7 @@ if(!r.ok){say(st,"err",ERR[r.error]||M.fail);bs.forEach(function(x){x.disabled=f
 st.className="st ok";st.textContent="";if(r.issueUrl){var a=document.createElement("a");a.href=r.issueUrl;a.target="_blank";a.rel="noopener";a.textContent="Issue #"+r.issueNumber+M.created;st.append(a)}else st.textContent=M.discarded;
 it.querySelector("[data-more]").remove();bs.forEach(function(x){x.remove()});it.style.opacity=".6";
 var card=it.closest(".card"),n=card.querySelector(".n");var c=Math.max(0,Number(n.textContent)-1);n.textContent=c;if(!c)n.classList.remove("hot");
-var pb=card.querySelector("[data-pcount]");if(pb){if(c)pb.textContent=M.pending+" "+c;else{pb.remove();card.dataset.f=card.dataset.f.replace("pending","").trim()}}
+var ri=document.getElementById(card.id+"-ri"),pb=ri&&ri.querySelector("[data-pcount]");if(pb){if(c)pb.textContent=c;else{pb.remove();ri.dataset.f=ri.dataset.f.replace("pending","").trim()}}
 if(total){var t=Math.max(0,Number(total.textContent)-1);total.textContent=t;if(!t)total.parentNode.classList.remove("hot")}})
 .catch(function(){say(st,"err",M.net);bs.forEach(function(x){x.disabled=false})})})})});
 })();
