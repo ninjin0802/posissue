@@ -148,7 +148,9 @@ export function parseReportRequest(v: unknown, forms: FormTemplate[] = DEFAULT_F
 export const reportUrls = (r: ReportInput) =>
   countUrls(r.title) + Object.values(r.fields).reduce((n, v) => n + countUrls(v), 0);
 
-export const countUrls = (s: string) => (s.match(/https?:\/\/|www\./gi) ?? []).length;
+// スキーム付き・www.・Markdown のリンクや画像 "](" ・プロトコル相対 "//host" を数える
+export const countUrls = (s: string) =>
+  (s.match(/https?:\/\/|www\.|\]\(|(?:^|[\s("'=<])\/\/[^\s/]/gim) ?? []).length;
 
 const ZWSP = "​";
 /** @メンションと #番号 の通知を無効化する（7.2）。 */

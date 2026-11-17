@@ -32,7 +32,7 @@
 </table>
 <p>CORS：<code>/api/report</code> は <code>OPTIONS</code> に応答し、要求の Origin をそのまま返す。Origin の可否は送信時に判定する（7.1 #6）。</p>
 <h2>4.3 GET /setup</h2>
-<p>GitHub から <code>installation_id</code> と <code>setup_action</code> を受け取る。インストールに含まれる各リポジトリについて、未登録ならプロジェクトを作りキーを発行し、一覧表示する。表示する前に、<code>installation_id</code> が本当にこの App のものかを GitHub API で確かめる（MUST）。</p>
+<p>GitHub App は「インストール時にユーザー認証（OAuth）を求める」を有効にし、コールバック先をこの URL にする。GitHub から <code>installation_id</code> と <code>code</code> を受け取る。<code>code</code> をユーザートークンに換え、<code>GET /user/installations</code> にその <code>installation_id</code> が含まれることを確かめてから（MUST）、各リポジトリのプロジェクトを作りキーを一覧表示する。<code>code</code> がなければ GitHub の認可画面へリダイレクトし、<code>installation_id</code> は <code>state</code> で持ち回る。確認できなければ 403 で、リポジトリ名もキーも出さない（非公開リポジトリの名前が漏れるのを防ぐ）。IP ごとに回数を制限する。</p>
 <h2>4.4 POST /webhook</h2>
 <p><code>X-Hub-Signature-256</code> を HMAC-SHA256 で検証する（MUST）。扱うイベント：<code>installation.deleted</code> → 該当プロジェクトを全停止、<code>installation_repositories.removed</code> → 該当リポジトリのプロジェクトを停止。</p>
 

@@ -7,14 +7,15 @@
 <h2>7.1 検査の順序</h2>
 <table>
 <tr><th>#</th><th>検査</th><th>失敗時</th></tr>
+<tr><td>0</td><td>本文が 20KB を超える（読む前に Content-Length で判定）</td><td>400 invalid_input</td></tr>
 <tr><td>1</td><td>JSON 形式・型・文字数（3.1 の制約）</td><td>400 invalid_input</td></tr>
 <tr><td>2</td><td>ハニーポット <code>hp</code> が空でない</td><td>422 spam</td></tr>
 <tr><td>3</td><td><code>elapsedMs</code> &lt; 3000</td><td>422 spam</td></tr>
-<tr><td>4</td><td>タイトルと全項目の URL 数 &gt; 2</td><td>422 spam</td></tr>
+<tr><td>4</td><td>タイトルと全項目の URL 数 &gt; 2（<code>http(s)://</code>、<code>www.</code>、Markdown のリンク・画像 <code>](</code>、プロトコル相対 <code>//host</code> を数える）</td><td>422 spam</td></tr>
 <tr><td>5</td><td>プロジェクトが存在し有効</td><td>404 unknown_project</td></tr>
 <tr><td>6</td><td>Origin が自ドメインか許可リストに含まれる（リストが空でなければ）。フォームページは iframe 内から自ドメインとして送るので、埋め込み元の制限は 7.3 の <code>frame-ancestors</code> で行う</td><td>403 forbidden_origin</td></tr>
 <tr><td>7</td><td>IP ごとの投稿数（1 分に 2 件。Rate Limiting バインディングの期間は 10 秒か 60 秒のみ）</td><td>429 rate_limited</td></tr>
-<tr><td>8</td><td>Turnstile トークンを siteverify で検証</td><td>403 captcha_failed</td></tr>
+<tr><td>8</td><td>Turnstile トークンを siteverify で検証し、結果の <code>hostname</code> が自ドメインであることも確かめる</td><td>403 captcha_failed</td></tr>
 <tr><td>9</td><td>プロジェクトの日次件数（既定 50）</td><td>429 rate_limited</td></tr>
 <tr><td>10</td><td>同一内容（キー・種別・タイトル・全項目）のハッシュが 24 時間以内にある。Issue 作成に失敗したらハッシュを消して再送できるようにする</td><td>409 duplicate</td></tr>
 </table>
@@ -31,7 +32,9 @@
 <li>フォームページの CSP <code>frame-ancestors</code> に許可リストを入れ、許可していないサイトには埋め込めないようにする（空なら <code>*</code>）。</li>
 <li>フォームページは <code>Content-Security-Policy</code> を付け、スクリプトは自身と Turnstile のみ許可。</li>
 <li>Webhook は署名を検証し、比較は時間一定の比較を行う。</li>
-<li>秘密情報（App 鍵・Turnstile secret）は Workers Secrets のみに置く。</li>
+<li>秘密情報（App 鍵・OAuth の client secret・Turnstile secret）は Workers Secrets のみに置く。</li>
+<li>スクリプトのない案内ページ（<code>/setup</code> など）にも CSP（<code>default-src 'none'</code>、<code>frame-ancestors 'none'</code>）を付ける。</li>
+<li>フォームには「送信内容とページの URL・ブラウザの情報が Issue に掲載される」ことを明記する。</li>
 <li>報告者の個人情報は保存しない（5章）。</li>
 </ul>
 <h2>7.4 悪用時の対応</h2>

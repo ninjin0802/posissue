@@ -4,7 +4,7 @@ import {
   type ErrorCode, type FormTemplate, type ReportResponse,
 } from "@posissue/core";
 import { mount } from "posissue";
-import { createIssue, getInstallation, listInstallationRepos, verifyWebhook, type GitHubCreds } from "./github";
+import { createIssue, listInstallationRepos, userOwnsInstallation, verifyWebhook, type GitHubCreds } from "./github";
 import { esc, formPage, ICON_SVG, landingPage, messagePage } from "./pages";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
@@ -16,6 +16,9 @@ export interface Env {
   GITHUB_APP_ID: string;
   GITHUB_APP_PRIVATE_KEY: string;
   GITHUB_APP_SLUG: string;
+  /** App の OAuth（/setup で持ち主を確かめる）。client id は公開してよい値 */
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
   GITHUB_WEBHOOK_SECRET: string;
   TURNSTILE_SITE_KEY: string;
   TURNSTILE_SECRET: string;
@@ -34,6 +37,8 @@ export interface ServerConfig {
 
 interface Project { key: string; installation_id: number; repo: string; allowed_origins: string; daily_limit: number | null; active: number }
 
+const MAX_BODY = 20_000;
+
 const STATUS: Record<ErrorCode, number> = {
   invalid_input: 400, captcha_failed: 403, forbidden_origin: 403, unknown_project: 404,
   duplicate: 409, spam: 422, rate_limited: 429, upstream_error: 502,
@@ -45,8 +50,10 @@ const WIDGET_JS =
   `var go=function(){mount({projectKey:s.dataset.key,endpoint:new URL(s.src).origin,position:s.dataset.position,label:s.dataset.label,lang:s.dataset.lang,` +
   `kinds:s.dataset.kinds?s.dataset.kinds.split(","):undefined})};document.body?go():addEventListener("DOMContentLoaded",go)})();`;
 
+// スクリプトのない案内ページ用の既定 CSP。フォームとトップページは自分の CSP で上書きする
+const STATIC_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'";
 const html = (body: string, headers: Record<string, string> = {}, status = 200) =>
-  new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", ...headers } });
+  new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", "content-security-policy": STATIC_CSP, ...headers } });
 
 const newKey = () => {
   const a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -77,7 +84,13 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       return r;
     };
     // 7.1 の順序どおり。安い検査から。
-    const r = parseReportRequest(await req.json().catch(() => null), forms);
+    // 7.1 #0: 巨大な本文は読む前に断る（正規の報告は最大でも 20KB に収まる）
+    if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY) return fail("invalid_input");
+    const text = await req.text();
+    if (text.length > MAX_BODY) return fail("invalid_input");
+    let json: unknown = null;
+    try { json = JSON.parse(text); } catch { /* 下で invalid_input */ }
+    const r = parseReportRequest(json, forms);
     if (!r) return fail("invalid_input");
     if (r.hp) return fail("spam", r.projectKey);
     if (r.elapsedMs < minElapsed) return fail("spam", r.projectKey);
@@ -96,8 +109,10 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     form.append("response", r.turnstileToken);
     form.append("remoteip", ip);
     const ts = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form })
-      .then((x) => x.json<{ success: boolean }>()).catch(() => ({ success: false }));
+      .then((x) => x.json<{ success: boolean; hostname?: string }>()).catch(() => ({ success: false, hostname: undefined }));
     if (!ts.success) return fail("captcha_failed", p.key);
+    // 7.1 #8: 自分のフォームで取った認証か確かめる（Cloudflare のテスト用秘密キーは hostname が固定なので除く）
+    if (!env.TURNSTILE_SECRET.startsWith("1x0000") && ts.hostname !== new URL(req.url).hostname) return fail("captcha_failed", p.key);
 
     const day = new Date().toISOString().slice(0, 10);
     const used = await env.DB.prepare(
@@ -130,12 +145,26 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     if (origin) { h.set("access-control-allow-origin", origin); h.set("vary", "origin"); }
   };
 
-  async function setup(url: URL, env: Env) {
-    const id = Number(url.searchParams.get("installation_id"));
-    if (!Number.isInteger(id) || id <= 0) return html(messagePage("Error", "<p>installation_id がありません。</p>"), {}, 400);
-    try { await getInstallation(creds(env), id); } catch {
-      return html(messagePage("Error", "<p>この App のインストールではありません。</p>"), {}, 404);
+  async function setup(req: Request, url: URL, env: Env) {
+    // 7.3: GitHub API を呼ぶので、連打で利用上限を使い切られないよう IP ごとに絞る
+    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+    if (!(await env.RL_IP.limit({ key: `setup:${ip}` })).success) {
+      return html(messagePage("Too many requests", "<p>少し待ってからもう一度お試しください。</p>"), {}, 429);
     }
+    // OAuth の往復では installation_id を state で持ち回る
+    const id = Number(url.searchParams.get("installation_id") ?? url.searchParams.get("state"));
+    if (!Number.isInteger(id) || id <= 0) return html(messagePage("Error", "<p>installation_id がありません。</p>"), {}, 400);
+    // 4.3: 見ている人がそのインストールの持ち主だと GitHub で確かめるまで、リポジトリ名もキーも出さない
+    const code = url.searchParams.get("code");
+    if (!code) {
+      const auth = new URL("https://github.com/login/oauth/authorize");
+      auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
+      auth.searchParams.set("state", String(id));
+      return Response.redirect(auth.toString(), 302);
+    }
+    let allowed = false;
+    try { allowed = await userOwnsInstallation(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, code, id); } catch (e) { console.log(String(e)); }
+    if (!allowed) return html(messagePage("Forbidden", "<p>このインストールを確認できませんでした。インストールしたアカウントでもう一度お試しください。</p>"), {}, 403);
     const repos = await listInstallationRepos(creds(env), id);
     const rows: string[] = [];
     for (const repo of repos) {
@@ -231,7 +260,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
         });
       }
 
-      if (req.method === "GET" && path === "/setup") return setup(url, env);
+      if (req.method === "GET" && path === "/setup") return setup(req, url, env);
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");

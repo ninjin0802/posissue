@@ -44,9 +44,22 @@ async function installationToken(c: GitHubCreds, id: number) {
   return r.token as string;
 }
 
-/** installation が本当にこの App のものか確かめる（App の JWT でしか取れない）。 */
-export const getInstallation = async (c: GitHubCreds, id: number) =>
-  gh(`/app/installations/${id}`, await appJwt(c.appId, c.privateKey));
+/**
+ * OAuth の code をユーザートークンに換え、そのユーザーがこのインストールにアクセスできるか確かめる。
+ * /user/installations はユーザーが入れた（または権限を持つ）この App のインストールだけを返す。
+ */
+export async function userOwnsInstallation(clientId: string, clientSecret: string, code: string, id: number) {
+  const res = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/json", "user-agent": "posissue" },
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code }),
+  });
+  const tok = (await res.json()) as { access_token?: string };
+  if (!tok.access_token) return false;
+  // shortcut: 先頭 100 件のみ確認。1 ユーザーが 100 を超えるインストールを持つならページングを足す
+  const r = await gh(`/user/installations?per_page=100`, tok.access_token);
+  return (r.installations as { id: number }[]).some((x) => x.id === id);
+}
 
 export async function listInstallationRepos(c: GitHubCreds, id: number): Promise<string[]> {
   // shortcut: 先頭 100 件のみ取得。1 インストールで 100 リポジトリを超えたらページングを足す
