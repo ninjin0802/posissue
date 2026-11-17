@@ -10,7 +10,7 @@ const STYLE = `
 --shadow:0 1px 2px rgba(20,20,40,.04),0 8px 24px rgba(20,20,40,.06)}
 @media (prefers-color-scheme:dark){:root{--bg:#0e0e14;--card:#17171f;--fg:#ececf3;--muted:#9a9aab;--line:#2a2a36;--field:#1c1c26;
 --accent:#8b8bf5;--accent-fg:#0e0e14;--accent-soft:rgba(139,139,245,.16);--err:#ff6b81;--ok:#4cd498;--shadow:none}}
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}/* タップ時の水色の四角を消す。キーボード操作用のフォーカス表示は残す */
 html,body{margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden}
 body{font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding:20px 16px 28px;-webkit-font-smoothing:antialiased}
 .wrap{max-width:520px;margin:0 auto}
@@ -26,7 +26,7 @@ header{display:flex;align-items:flex-start;justify-content:space-between;gap:12p
 .kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 18px;padding:0;border:0}
 .kind{position:relative}
 .kind input{position:absolute;opacity:0;inset:0;cursor:pointer}
-.kind span{display:block;height:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--card);transition:border-color .15s,background .15s,box-shadow .15s}
+.kind span{display:block;user-select:none;-webkit-user-select:none;height:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--card);transition:border-color .15s,background .15s,box-shadow .15s}
 .kind b{display:block;font-size:14px}
 .kind small{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin-top:2px}
 .kind input:checked+span{border-color:var(--accent);background:var(--accent-soft)}
@@ -167,7 +167,7 @@ a{color:var(--accent)}</style></head>
 const LANDING_STYLE = `
 :root{--bg:#fbfbfe;--fg:#16161d;--muted:#5f5f70;--line:#e6e6ef;--card:#fff;--accent:#5b5bd6;--accent2:#c05bd6;--soft:rgba(91,91,214,.1);--code:#14141c;--codefg:#e6e6f0}
 @media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--fg:#ececf3;--muted:#9d9db0;--line:#24242f;--card:#14141c;--accent:#8b8bf5;--accent2:#d58bf5;--soft:rgba(139,139,245,.12);--code:#101018}}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit}.w{max-width:1080px;margin:0 auto;padding:0 20px}
 nav{position:sticky;top:0;z-index:5;backdrop-filter:saturate(1.6) blur(12px);background:color-mix(in srgb,var(--bg) 80%,transparent);border-bottom:1px solid var(--line)}

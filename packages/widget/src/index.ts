@@ -30,6 +30,7 @@ export function mount(cfg: WidgetConfig & { endpoint: string }): WidgetHandle {
   const root = host.attachShadow({ mode: "open" });
   const side = cfg.position === "bottom-left" ? "left" : "right";
   root.innerHTML = `<style>
+button{-webkit-tap-highlight-color:transparent}
 button.fab{position:fixed;bottom:20px;${side}:20px;z-index:2147483646;padding:10px 16px;border:0;border-radius:999px;background:#5b5bd6;color:#fff;font:600 14px system-ui,sans-serif;box-shadow:0 4px 16px rgba(91,91,214,.35);cursor:pointer}
 .back{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center}
 .back.on{display:flex}.box{position:relative;width:min(480px,calc(100vw - 32px));height:min(680px,calc(100vh - 32px));background:#f7f7fb;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){.box{background:#0e0e14}}
