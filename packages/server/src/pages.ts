@@ -70,8 +70,8 @@ const GH_ICON = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentCo
 const OK_ICON = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg>`;
 
 /** フォームの見た目はフォームの型（FormTemplate[]）から組み立てる。値は textContent で入れるので HTML 注入されない。 */
-export function formPage(o: { projectKey: string; repo: string; siteKey: string; forms: FormTemplate[]; meta: Record<string, string>; nonce: string; lang?: "ja" | "en"; color?: string }) {
-  const cfg = JSON.stringify({ key: o.projectKey, repo: o.repo, forms: o.forms, meta: o.meta, lang: o.lang }).replace(/</g, "\\u003c");
+export function formPage(o: { projectKey: string; repo: string; siteKey: string; forms: FormTemplate[]; meta: Record<string, string>; nonce: string; lang?: "ja" | "en"; color?: string; prefill?: string }) {
+  const cfg = JSON.stringify({ key: o.projectKey, repo: o.repo, forms: o.forms, meta: o.meta, lang: o.lang, prefill: o.prefill ? JSON.parse(o.prefill) : null }).replace(/</g, "\\u003c");
   // 作者が指定したアクセント色（6 桁の 16 進だけを受け付ける）。明るい色なら文字を黒に
   let accent = "";
   if (o.color && /^[0-9a-fA-F]{6}$/.test(o.color)) {
@@ -146,7 +146,11 @@ if(fd.id in keep){if(fd.type==="checkbox")inp.checked=keep[fd.id];else inp.value
 inp.required=!!fd.required;w.append(inp);
 if(fd.type==="textarea"){var c=el("div",{className:"count",textContent:inp.value.length+" / "+max});inp.addEventListener("input",function(){c.textContent=inp.value.length+" / "+max});w.append(c)}}
 inp.addEventListener("input",function(){inp.removeAttribute("aria-invalid")});box.append(w)})}
+// 入力の先埋め（サイトやアプリが prefill で渡したもの）
+var P=C.prefill;if(P&&P.kind){var pk=C.forms.filter(function(x){return x.kind===P.kind})[0];if(pk)cur=pk}
 setLang(L);
+if(P){if(P.title)title.value=P.title;if(P.fields)box.querySelectorAll("input,textarea,select").forEach(function(i){var v=P.fields[i.name];if(v==null)return;
+if(i.type==="checkbox")i.checked=v==="true";else{i.value=v;i.dispatchEvent(new Event("input"))}})}
 function say(k,err){lastMsg=k?[k,err]:null;msg.textContent=k?t(k):"";msg.className=err?"err":""}
 function post(type,data){var m=Object.assign({type:type},data||{});try{if(parent!==window)parent.postMessage(m,"*")}catch(e){}
 if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(JSON.stringify(m))}
@@ -161,10 +165,10 @@ var btn=f.querySelector(".send");btn.disabled=true;btn.classList.add("busy");say
 fetch("/api/report",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({
 projectKey:C.key,kind:cur.kind,title:title.value,fields:fields,hp:d.get("hp")||"",meta:meta,
 turnstileToken:d.get("cf-turnstile-response")||"",elapsedMs:Date.now()-t0})})
-.then(function(r){return r.json()}).then(function(r){if(r.ok&&r.pending){f.hidden=true;$("done").hidden=false;$("doneText").textContent=t("held");post("posissue:done",{pending:true});return}
+.then(function(r){return r.json()}).then(function(r){if(r.ok&&r.pending){f.hidden=true;$("done").hidden=false;$("doneText").textContent=t("held");post("posissue:done",{pending:true,kind:cur.kind});return}
 if(r.ok){f.hidden=true;$("done").hidden=false;
 var p=$("doneText");p.textContent=t("sent");var a=el("a",{href:r.issueUrl,target:"_blank",rel:"noopener",textContent:String(r.issueNumber)});p.append(a,document.createTextNode(t("sent2")));
-post("posissue:done",{issueNumber:r.issueNumber})}
+post("posissue:done",{issueNumber:r.issueNumber,issueUrl:r.issueUrl,kind:cur.kind})}
 else{say(T[r.error]?r.error:"upstream_error",true);window.turnstile&&turnstile.reset()}})
 .catch(function(){say("upstream_error",true)}).finally(function(){btn.disabled=false;btn.classList.remove("busy")})});
 })();
@@ -424,6 +428,7 @@ export interface PendingItem { id: string; title: string; body: string; createdA
 export interface KeyRow {
   repo: string; key: string | null; origins: string[]; dailyLimit: number | null;
   approval: boolean; // true = 承認してから起票（4.7）
+  forms?: string | null; // 作者が決めたフォームの型（JSON）。null は標準（4.8）
   canEdit?: boolean; installationId?: number; pending?: PendingItem[];
 }
 
@@ -537,6 +542,8 @@ h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px}.lead{margin:0;color:var(
 .hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
 textarea,input[type=number]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--fg);font:13.5px/1.55 ui-monospace,Menlo,monospace}
 input[type=number]{max-width:180px;font-family:inherit;font-size:14px}
+textarea.code{font:12.5px/1.55 ui-monospace,Menlo,monospace;min-height:260px;tab-size:2}
+.save-row .more{margin-left:4px}
 textarea:focus,input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
 .save-row{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
 .note{font-size:13px;color:var(--muted);padding:0 20px 18px}
@@ -546,7 +553,7 @@ footer{max-width:880px;margin:0 auto;padding:0 20px 40px;display:flex;flex-wrap:
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
 
 /** ログインした作者向けの管理画面（/admin・/setup）。キーの確認、設定、承認待ちの処理。 */
-export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; session: string; defaultDailyLimit: number; justInstalled: boolean; lang: Lang }) {
+export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; session: string; defaultDailyLimit: number; justInstalled: boolean; lang: Lang; defaultForms: FormTemplate[] }) {
   const t = tr(o.lang);
   const install = `https://github.com/apps/${encodeURIComponent(o.appSlug)}/installations/new`;
   const copyBtn = (v: string, label: string) =>
@@ -575,6 +582,7 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
     if (r.canEdit) {
       tabs.push(["pending", t("承認待ち", "Pending"), `<span class="n${pend.length ? " hot" : ""}">${pend.length}</span>`]);
       tabs.push(["settings", t("設定", "Settings"), ""]);
+      tabs.push(["forms", t("フォーム", "Form"), r.forms ? `<span class="n hot" title="${t("カスタム", "Custom")}">✎</span>` : ""]);
     }
     const first = r.canEdit && pend.length ? "pending" : "setup";
     const panel = (k: string, body: string) =>
@@ -607,6 +615,13 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
     side.push(`<button type="button" class="ri" role="tab" id="${id}-ri" aria-controls="${id}" data-name="${esc(r.repo.toLowerCase())}" data-f="${flags}">
 <span class="rn"><b>${esc(r.repo.split("/")[1] ?? r.repo)}</b><small>${esc(r.repo.split("/")[0])}</small></span>
 <span class="rm">${pend.length ? `<span class="pc" data-pcount>${pend.length}</span>` : ""}${r.canEdit ? `<span class="mt${r.approval ? " ap" : ""}" data-mode>${r.approval ? t("承認", "Review") : t("即時", "Instant")}</span>` : ""}</span></button>`);
+    const formsJson = (() => { try { return JSON.stringify(r.forms ? JSON.parse(r.forms) : o.defaultForms, null, 2); } catch { return JSON.stringify(o.defaultForms, null, 2); } })();
+    const formsPanel = !r.canEdit ? "" : panel("forms", `<form class="fm" data-repo="${esc(r.repo)}">
+<p class="hint" style="margin:0 0 10px">${t("報告フォームの種別と項目を、JSON（FormTemplate の配列）で決められます。種別は bug / feature / other から最大 3 つ、項目は 1 種別 15 個まで。項目の種類は text / textarea / select / checkbox です。", "Define the report types and fields as JSON (an array of FormTemplate). Up to 3 types (bug / feature / other) and 15 fields each. Field types: text, textarea, select, checkbox.")}
+${r.forms ? `<b>${t("いまはカスタムのフォームを使っています。", "A custom form is active.")}</b>` : t("いまは標準のフォームを使っています。", "The standard form is active.")}</p>
+<textarea name="forms" rows="16" spellcheck="false" class="code">${esc(formsJson)}</textarea>
+<div class="save-row"><button type="submit" class="btn">${t("保存", "Save")}</button><button type="button" class="ghost" data-reset>${t("標準に戻す", "Reset to standard")}</button>
+<a class="more" href="${esc(o.origin)}/r/${esc(r.key!)}" target="_blank" rel="noopener">${t("フォームを開いて確かめる ↗", "Open the form ↗")}</a><span class="st" role="status" aria-live="polite"></span></div></form>`);
     return `<section class="card" id="${id}" role="tabpanel" aria-labelledby="${id}-ri" aria-label="${esc(r.repo)}" data-repo="${esc(r.repo)}" hidden>
 <div class="head static"><h2>${GH_ICON}<span><i class="own">${esc(r.repo.split("/")[0])}/</i>${esc(r.repo.split("/")[1] ?? "")}</span></h2>
 ${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? t("承認モード", "Review first") : t("すぐに起票", "Instant")}</span>` : ""}
@@ -614,7 +629,7 @@ ${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.appro
 <div class="body">
 <div class="tabs" role="tablist">${tabs.map(([k, label, extra]) =>
   `<button type="button" class="tab" role="tab" id="${id}-t-${k}" aria-controls="${id}-${k}" aria-selected="${k === first}" tabindex="${k === first ? 0 : -1}">${label}${extra}</button>`).join("")}</div>
-${setupPanel}${pendingPanel}${settingsPanel}
+${setupPanel}${pendingPanel}${settingsPanel}${formsPanel}
 ${r.canEdit ? "" : `<p class="note">${t("設定の変更と承認は、このリポジトリの管理者だけができます。", "Only repository admins can change settings and review reports.")}</p>`}</div></section>`;
   }).join("");
   const empty = `<section class="card"><div class="empty" style="padding:44px 20px"><span class="ic" aria-hidden="true">🧩</span>
@@ -641,7 +656,7 @@ ${o.rows.length ? `<div class="layout">
 <script nonce="${o.nonce}">
 (function(){
 var SESSION=${JSON.stringify(o.session)};
-var M=${JSON.stringify({collapse: t("たたむ", "Collapse"),more: t("全文を見る", "Show all"),copy: t("コピー", "Copy"),copied: t("コピー済み", "Copied"),copyFail: t("選択してコピー", "Select to copy"),expand: t("すべて開く", "Expand all"),collapseAll: t("すべて閉じる", "Collapse all"),saving: t("保存しています…", "Saving…"),saved: t("保存しました", "Saved"),saveFail: t("保存できませんでした。", "Could not save."),net: t("通信に失敗しました。", "Network error."),working: t("処理しています…", "Working…"),fail: t("処理できませんでした。", "Could not complete."),discarded: t("捨てました", "Discarded"),created: t(" を作成しました ↗", " created ↗"),pending: t("承認待ち", "Pending"),review: t("承認モード", "Review first"),short_review: t("承認", "Review"),short_instant: t("即時", "Instant"),instant: t("すぐに起票", "Instant"),invalid_input: t("入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。", "Please check your input (sites like https://example.com, limit 1–1000)."),session_expired: t("時間が経ちました。ページを開き直してください。", "Session expired. Please reload the page."),forbidden: t("このリポジトリは変更できません。", "You can’t change this repository."),rate_limited: t("少し待ってからもう一度お試しください。", "Please wait a moment and try again."),not_found: t("すでに処理されています。", "Already handled."),upstream_error: t("GitHub への起票に失敗しました。時間をおいてお試しください。", "Could not create the issue on GitHub. Please try again later.")}).replace(/</g, "\\u003c")};
+var M=${JSON.stringify({collapse: t("たたむ", "Collapse"),more: t("全文を見る", "Show all"),copy: t("コピー", "Copy"),copied: t("コピー済み", "Copied"),copyFail: t("選択してコピー", "Select to copy"),expand: t("すべて開く", "Expand all"),collapseAll: t("すべて閉じる", "Collapse all"),saving: t("保存しています…", "Saving…"),saved: t("保存しました", "Saved"),saveFail: t("保存できませんでした。", "Could not save."),net: t("通信に失敗しました。", "Network error."),working: t("処理しています…", "Working…"),fail: t("処理できませんでした。", "Could not complete."),discarded: t("捨てました", "Discarded"),created: t(" を作成しました ↗", " created ↗"),pending: t("承認待ち", "Pending"),review: t("承認モード", "Review first"),short_review: t("承認", "Review"),badJson: t("JSON の書き方が正しくありません。", "Invalid JSON."),short_instant: t("即時", "Instant"),instant: t("すぐに起票", "Instant"),invalid_input: t("入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。", "Please check your input (sites like https://example.com, limit 1–1000)."),session_expired: t("時間が経ちました。ページを開き直してください。", "Session expired. Please reload the page."),forbidden: t("このリポジトリは変更できません。", "You can’t change this repository."),rate_limited: t("少し待ってからもう一度お試しください。", "Please wait a moment and try again."),not_found: t("すでに処理されています。", "Already handled."),upstream_error: t("GitHub への起票に失敗しました。時間をおいてお試しください。", "Could not create the issue on GitHub. Please try again later.")}).replace(/</g, "\\u003c")};
 var ERR=M;
 function call(path,body){return fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.assign({session:SESSION},body))}).then(function(r){return r.json()})}
 function say(st,cls,text){st.className="st"+(cls?" "+cls:"");st.textContent=text}
@@ -682,6 +697,12 @@ if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\\n");say(st,"ok",M.sav
 var card=f.closest(".card"),b=card.querySelector("[data-mode]");if(b){b.textContent=r.approval?M.review:M.instant;b.classList.toggle("ap",r.approval)}
 var ri=document.getElementById(card.id+"-ri");if(ri){var d=ri.querySelector("[data-mode]");if(d){d.classList.toggle("ap",r.approval);d.textContent=r.approval?M.short_review:M.short_instant}ri.dataset.f=ri.dataset.f.replace(/approval|instant/,r.approval?"approval":"instant")}}
 else say(st,"err",ERR[r.error]||M.saveFail)}).catch(function(){say(st,"err",M.net)}).finally(function(){btn.disabled=false})})});
+// フォームの型（JSON）
+document.querySelectorAll("form.fm").forEach(function(f){var st=f.querySelector(".st");
+function send(forms){say(st,"",M.saving);return call("/api/forms",{repo:f.dataset.repo,forms:forms}).then(function(r){
+if(r.ok){if(r.forms)f.elements.forms.value=JSON.stringify(r.forms,null,2);say(st,"ok",M.saved)}else say(st,"err",(r.message||ERR[r.error]||M.saveFail))}).catch(function(){say(st,"err",M.net)})}
+f.addEventListener("submit",function(e){e.preventDefault();var v;try{v=JSON.parse(f.elements.forms.value)}catch(x){say(st,"err",M.badJson);return}send(v)});
+f.querySelector("[data-reset]").addEventListener("click",function(){send(null).then(function(){location.reload()})})});
 // 承認待ち
 var total=document.querySelector(".stat:nth-child(2) b");
 document.querySelectorAll(".item").forEach(function(it){var st=it.querySelector(".st"),bs=it.querySelectorAll("[data-action]");

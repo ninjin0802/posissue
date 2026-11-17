@@ -25,9 +25,23 @@ export interface WidgetConfig {
   /** 重なり順。ほかの浮いた要素と重なるときに調整する */
   zIndex?: number;
   meta?: Record<string, string>;
+  /** 入力の先埋め。種別・タイトル・項目（id → 値） */
+  prefill?: Prefill;
+  /** 送信が終わったとき。承認モードでは pending: true（issueNumber はない） */
+  onSubmit?: (result: SubmitResult) => void;
+  /** フォームを閉じたとき */
+  onClose?: () => void;
 }
 
-export interface WidgetHandle { open(): void; close(): void; destroy(): void }
+export interface Prefill { kind?: ReportKind; title?: string; fields?: Record<string, string> }
+export interface SubmitResult { kind?: ReportKind; issueNumber?: number; issueUrl?: string; pending?: boolean }
+
+export interface WidgetHandle {
+  /** フォームを開く。prefill を渡すと、その内容を入れた状態で開き直す */
+  open(options?: { prefill?: Prefill }): void;
+  close(): void;
+  destroy(): void;
+}
 
 export function init(cfg: WidgetConfig): WidgetHandle {
   return mount({ ...cfg, endpoint: cfg.endpoint ?? DEFAULT_ENDPOINT });
@@ -80,7 +94,10 @@ iframe{border:0;width:100%;height:100%}.x{position:absolute;top:6px;right:8px;bo
   let frame: HTMLIFrameElement | null = null;
   let opener: Element | null = null;
 
-  const open = () => {
+  const open = (options?: { prefill?: Prefill }) => {
+    // 先埋めを変えて開くときは、フォームを作り直す
+    if (frame && options?.prefill) { frame.remove(); frame = null; }
+    const prefill = options?.prefill ?? cfg.prefill;
     if (!frame) {
       const q = new URLSearchParams({
         ...(cfg.meta ?? {}),
@@ -90,6 +107,7 @@ iframe{border:0;width:100%;height:100%}.x{position:absolute;top:6px;right:8px;bo
       if (cfg.kinds?.length) q.set("kinds", cfg.kinds.join(","));
       if (cfg.lang) q.set("lang", cfg.lang);
       if (hex) q.set("color", hex);
+      if (prefill) q.set("prefill", JSON.stringify(prefill));
       frame = document.createElement("iframe");
       frame.title = "Feedback";
       frame.src = `${origin}/r/${encodeURIComponent(cfg.projectKey)}?${q}`;
@@ -101,16 +119,24 @@ iframe{border:0;width:100%;height:100%}.x{position:absolute;top:6px;right:8px;bo
   };
   // 閉じたら、開く前にフォーカスがあった場所（自前のボタンなど）に戻す
   const close = () => {
+    if (!back.classList.contains("on")) return;
     back.classList.remove("on");
+    if (cfg.onClose) cfg.onClose();
     const el = (fab ?? opener) as HTMLElement | null;
     if (el && typeof el.focus === "function") el.focus();
   };
   const onMsg = (e: MessageEvent) => {
     if (e.origin !== origin || e.source !== frame?.contentWindow) return;
     if (e.data?.type === "posissue:close") close();
+    if (e.data?.type === "posissue:done") {
+      const result: SubmitResult = { kind: e.data.kind, issueNumber: e.data.issueNumber, issueUrl: e.data.issueUrl, pending: e.data.pending };
+      if (cfg.onSubmit) cfg.onSubmit(result);
+      // script タグ版でも受け取れるように、ページにもイベントを出す
+      dispatchEvent(new CustomEvent("posissue:submit", { detail: result }));
+    }
   };
   const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && back.classList.contains("on")) close(); };
-  if (fab) fab.addEventListener("click", open);
+  if (fab) fab.addEventListener("click", () => open());
   root.querySelector(".x")!.addEventListener("click", close);
   back.addEventListener("click", (e) => { if (e.target === back) close(); });
   addEventListener("message", onMsg);

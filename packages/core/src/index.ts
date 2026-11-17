@@ -105,6 +105,66 @@ export function assertForms(forms: FormTemplate[]): void {
   }
 }
 
+/**
+ * 作者が管理画面から送ってきたフォームの型（信頼できない入力）を検証し、安全な形に作り直す。
+ * 不正ならエラーメッセージ（英語）を返す。公式ホストで作者ごとのフォームを使うため（仕様 3.2）。
+ */
+export function parseFormsInput(v: unknown): FormTemplate[] | string {
+  const lt = (x: unknown, max: number): LocalText | null => {
+    if (typeof x === "string") return x.trim() && x.length <= max ? x : null;
+    if (x && typeof x === "object" && !Array.isArray(x)) {
+      const o = x as Record<string, unknown>;
+      if (typeof o.en !== "string" || !o.en.trim() || o.en.length > max) return null;
+      if (o.ja !== undefined && (typeof o.ja !== "string" || o.ja.length > max)) return null;
+      return o.ja ? { en: o.en, ja: o.ja } : { en: o.en };
+    }
+    return null;
+  };
+  const opt = (x: unknown, max: number) => (x === undefined ? undefined : lt(x, max));
+  if (!Array.isArray(v) || v.length < 1 || v.length > REPORT_KINDS.length) return "forms must be an array of 1-3 templates";
+  const out: FormTemplate[] = [];
+  for (const [i, t] of v.entries()) {
+    if (!t || typeof t !== "object") return `forms[${i}] must be an object`;
+    const o = t as Record<string, unknown>;
+    if (!REPORT_KINDS.includes(o.kind as ReportKind)) return `forms[${i}].kind must be bug, feature or other`;
+    const label = lt(o.label, 40);
+    if (!label) return `forms[${i}].label is required (up to 40 chars)`;
+    const description = opt(o.description, 100), titlePlaceholder = opt(o.titlePlaceholder, 100);
+    if (description === null || titlePlaceholder === null) return `forms[${i}] description / titlePlaceholder is too long`;
+    if (!Array.isArray(o.fields) || o.fields.length > 15) return `forms[${i}].fields must be an array of up to 15 fields`;
+    const fields: FormField[] = [];
+    for (const [j, f] of o.fields.entries()) {
+      const at = `forms[${i}].fields[${j}]`;
+      if (!f || typeof f !== "object") return `${at} must be an object`;
+      const g = f as Record<string, unknown>;
+      if (typeof g.id !== "string" || !ID_RE.test(g.id)) return `${at}.id must be 1-32 letters, digits, _ or -`;
+      if (!["text", "textarea", "select", "checkbox"].includes(g.type as string)) return `${at}.type must be text, textarea, select or checkbox`;
+      const fl = lt(g.label, 80);
+      if (!fl) return `${at}.label is required (up to 80 chars)`;
+      const placeholder = opt(g.placeholder, 200), help = opt(g.help, 200);
+      if (placeholder === null || help === null) return `${at} placeholder / help is too long`;
+      if (g.required !== undefined && typeof g.required !== "boolean") return `${at}.required must be true or false`;
+      if (g.maxLength !== undefined && (typeof g.maxLength !== "number" || !Number.isInteger(g.maxLength) || g.maxLength < 1 || g.maxLength > LIMITS.body)) return `${at}.maxLength must be 1-5000`;
+      let options: FormField["options"];
+      if (g.type === "select") {
+        if (!Array.isArray(g.options) || !g.options.length || g.options.length > 30) return `${at}.options must have 1-30 items`;
+        options = [];
+        for (const op of g.options) {
+          const p = (op ?? {}) as Record<string, unknown>;
+          const ol = lt(p.label, 80);
+          if (typeof p.value !== "string" || !p.value || p.value.length > 50 || !ol) return `${at}.options need value (up to 50) and label`;
+          options.push({ value: p.value, label: ol });
+        }
+      }
+      fields.push({ id: g.id, type: g.type as FieldType, label: fl, ...(placeholder ? { placeholder } : {}), ...(help ? { help } : {}),
+        ...(g.required ? { required: true } : {}), ...(g.maxLength ? { maxLength: g.maxLength as number } : {}), ...(options ? { options } : {}) });
+    }
+    out.push({ kind: o.kind as ReportKind, label, ...(description ? { description } : {}), ...(titlePlaceholder ? { titlePlaceholder } : {}), fields });
+  }
+  try { assertForms(out); } catch (e) { return (e as Error).message; }
+  return out;
+}
+
 /** 信頼できない入力を、フォームの型に沿って検証する。不正なら null。 */
 export function parseReportRequest(v: unknown, forms: FormTemplate[] = DEFAULT_FORMS): ReportRequest | null {
   if (!v || typeof v !== "object") return null;
