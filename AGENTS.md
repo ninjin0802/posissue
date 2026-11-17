@@ -41,6 +41,8 @@ cd apps/hosted && npx wrangler dev   # .dev.vars にテスト用の値が必要�
   - HTML に値を入れるときは `esc()`、ブラウザ側は `textContent`。インラインスクリプトは nonce 付き CSP。
 - 報告者の個人情報（IP、メールなど）を保存しない。
 - 新しい分岐やパーサーを足したら `packages/*/test` に小さなテストを足す。
+  エンドポイントの流れ（報告・承認・設定・OAuth）は `packages/server/test/flows.test.ts` にある。D1 は `node:sqlite` の偽物、GitHub と Turnstile は `mockFetch()` で差し替える（`test/helpers.ts`）。
+- **リリースするとき**は 4 か所を同じ内容で更新する：`CHANGELOG.md`、`apps/hosted/public/changelog.html`、`apps/hosted/public/en/changelog.html`、GitHub Releases（`gh release create vX.Y.Z --target <main のコミット>`）。
 - コミットとドキュメントは日本語。
 
 ## よくある変更の入口
