@@ -18,6 +18,7 @@ describe("parseReportRequest", () => {
     expect(parseReportRequest({ ...base, kind: "spam" })).toBeNull();
     expect(parseReportRequest({ ...base, projectKey: "pk_short" })).toBeNull();
     expect(parseReportRequest({ ...base, title: "x".repeat(101) })).toBeNull();
+    expect(parseReportRequest({ ...base, meta: { "[x](https://e)": "v" } })).toBeNull();
   });
   it("validates select and checkbox against the form type", () => {
     const forms: FormTemplate[] = [{ kind: "other", label: "O", fields: [
@@ -42,7 +43,7 @@ describe("assertForms", () => {
 
 describe("buildIssue", () => {
   it("builds sections from the form type, neutralizes mentions, escapes meta", () => {
-    const r = parseReportRequest({ ...base, fields: { steps: "ping @octocat #12", actual: "boom" }, meta: { page: "a|b`c", x: "<a href=https://spam>", y: "[x](https://e)" } })!;
+    const r = parseReportRequest({ ...base, fields: { steps: "ping @octocat #12", actual: "boom" }, meta: { page: "a|b`c", x: "<a href=https://spam>", y: "[x](https://e)", w: "www.spam.com" } })!;
     const i = buildIssue(r, DEFAULT_FORMS, ["extra"]);
     expect(i.title).toBe("[Bug] Save fails");
     expect(i.labels).toEqual(["via-widget", "bug", "extra"]);
@@ -50,6 +51,7 @@ describe("buildIssue", () => {
     expect(i.body).not.toContain("### Expected behavior");
     expect(i.body).toContain("| x | <code>&#60;a href=https&#58;//spam&#62;</code> |");
     expect(i.body).toContain("| y | <code>&#91;x&#93;&#40;https&#58;//e&#41;</code> |");
+    expect(i.body).toContain("| w | <code>www&#46;spam&#46;com</code> |");
     expect(i.body).toContain("| page | <code>a&#124;b&#96;c</code> |");
   });
   it("counts urls across all fields", () => {

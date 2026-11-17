@@ -11,7 +11,7 @@ export interface ReportInput {
   kind: ReportKind;
   title: string;        // 1〜100 文字
   fields: Record&lt;string, string&gt;; // FormField.id → 値。合計 5000 文字まで
-  meta?: Record&lt;string, string&gt;; // 自動収集・任意情報。キー 20 個まで、値 200 文字まで
+  meta?: Record&lt;string, string&gt;; // 自動収集・任意情報。キー 20 個まで、値 200 文字まで。キーは英数字・_・- のみ
 }
 
 export interface ReportRequest extends ReportInput {

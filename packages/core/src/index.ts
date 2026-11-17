@@ -80,6 +80,7 @@ export type ReportResponse =
   | { ok: false; error: ErrorCode };
 
 export const LIMITS = { title: 100, body: 5000, metaKeys: 20, metaValue: 200 } as const;
+const META_KEY_RE = /^[A-Za-z0-9_-]{1,50}$/; // meta のキーは記号なし（Issue の表にそのまま出すため）
 const KEY_RE = /^pk_[A-Za-z0-9]{24}$/;
 
 const str = (v: unknown, max: number): v is string =>
@@ -132,7 +133,7 @@ export function parseReportRequest(v: unknown, forms: FormTemplate[] = DEFAULT_F
     const entries = Object.entries(o.meta);
     if (entries.length > LIMITS.metaKeys) return null;
     for (const [k, val] of entries) {
-      if (k.length > 50 || typeof val !== "string" || val.length > LIMITS.metaValue) return null;
+      if (!META_KEY_RE.test(k) || typeof val !== "string" || val.length > LIMITS.metaValue) return null;
     }
     meta = Object.fromEntries(entries) as Record<string, string>;
   }
@@ -159,7 +160,7 @@ const cell = (s: string) =>
 
 // meta は報告者が自由に入れられる。Markdown/HTML の記号を全部文字参照にして、リンクにならないようにする（URL 数の制限の抜け道を塞ぐ）
 const code = (s: string) =>
-  `<code>${neutralize(s).replace(/[&<>|[\]()!*_`\\:~]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\r?\n/g, " ")}</code>`;
+  `<code>${neutralize(s).replace(/[&<>|[\]()!*_`\\:~.]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\r?\n/g, " ")}</code>`;
 
 const PREFIX: Record<ReportKind, string> = { bug: "[Bug]", feature: "[Feature]", other: "[Feedback]" };
 const KIND_LABEL: Record<ReportKind, string> = { bug: "bug", feature: "enhancement", other: "feedback" };

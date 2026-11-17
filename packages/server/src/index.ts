@@ -208,7 +208,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
             const ks = v.split(",");
             const picked = forms.filter((t) => ks.includes(t.kind));
             if (picked.length) shown = picked;
-          } else if (Object.keys(meta).length < 18 && k.length <= 50) meta[k] = v.slice(0, 200); // 18 + userAgent/language = 20
+          } else if (Object.keys(meta).length < 18 && /^[A-Za-z0-9_-]{1,50}$/.test(k)) meta[k] = v.slice(0, 200); // 18 + userAgent/language = 20
         }
         const nonce = crypto.randomUUID().replace(/-/g, "");
         const allowed = origins(p);
