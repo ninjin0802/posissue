@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>パッケージと設定の型 | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>3. パッケージと設定の型</h1>
+<p>利用者は<strong>決まった型の設定を渡すだけ</strong>で使えます。型は <code>@posissue/core</code> で定義し、各パッケージはそれを再エクスポートします。</p>
+<h2>3.1 共通の型（@posissue/core）</h2>
+<pre><code>export type ReportKind = "bug" | "feature" | "other";
+
+export interface ReportInput {
+  kind: ReportKind;
+  title: string;        // 1〜100 文字
+  fields: Record&lt;string, string&gt;; // FormField.id → 値。合計 5000 文字まで
+  meta?: Record&lt;string, string&gt;; // 自動収集・任意情報。キー 20 個まで、値 200 文字まで
+}
+
+export interface ReportRequest extends ReportInput {
+  projectKey: string;     // "pk_" + 英数字
+  turnstileToken: string;
+  hp?: string;            // ハニーポット。空であること
+  elapsedMs: number;      // フォーム表示から送信までの時間
+}
+
+export type ReportResponse =
+  | { ok: true; issueNumber: number; issueUrl: string }
+  | { ok: false; error: ErrorCode };
+
+export type ErrorCode =
+  | "invalid_input" | "unknown_project" | "forbidden_origin"
+  | "captcha_failed" | "rate_limited" | "duplicate" | "spam" | "upstream_error";</code></pre>
+<h2>3.2 フォームの型（FormTemplate）</h2>
+<p>報告フォームは<strong>型を渡すだけ</strong>で決まります。同じ型から「フォームの画面」「サーバーでの検証」「Issue 本文の形」の3つが作られるので、ずれません。</p>
+<pre><code>export type LocalText = string | { en: string; ja?: string };
+export type FieldType = "text" | "textarea" | "select" | "checkbox";
+
+export interface FormField {
+  id: string;            // 英数字・_・-、32 文字まで。種別の中で一意
+  type: FieldType;
+  label: LocalText;      // Issue 本文では "### {label(en)}" の見出しになる
+  placeholder?: LocalText;
+  help?: LocalText;
+  required?: boolean;
+  options?: { value: string; label: LocalText }[]; // select のとき必須
+  maxLength?: number;    // 既定 text=200 / textarea=5000
+}
+
+export interface FormTemplate {
+  kind: ReportKind;      // 種別ごとに1つ
+  label: LocalText;
+  description?: LocalText;
+  titlePlaceholder?: LocalText;
+  fields: FormField[];
+}
+
+export const DEFAULT_FORMS: FormTemplate[]; // bug: 再現手順/期待/実際、feature: 困りごと/提案、other: 内容</code></pre>
+<ul>
+<li>型の誤り（kind の重複、id の重複・不正、options のない select）は <code>createHandler</code> の起動時に例外にする（MUST）。</li>
+<li>サーバーは型にない項目、必須の空欄、選択肢にない値を <code>invalid_input</code> で拒否する（MUST）。</li>
+<li>v1 の公式ホストは <code>DEFAULT_FORMS</code> 固定。独自の型はセルフホストで使う（10章）。</li>
+</ul>
+<h2>3.3 ウィジェット（posissue）</h2>
+<pre><code>import { init } from "posissue";
+
+init({
+  projectKey: "pk_xxx",
+  endpoint?: "https://posissue.example",   // 省略時は公式ホスト
+  kinds?: ["bug", "feature", "other"],     // 表示する種別
+  position?: "bottom-right" | "bottom-left",
+  label?: "フィードバック",                  // ボタンの文言
+  meta?: { appVersion: "1.2.0" },          // Issue に付ける追加情報
+}): { open(): void; close(): void; destroy(): void };</code></pre>
+<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。<code>data-position</code>、<code>data-label</code> も使える。</p>
+<h2>3.4 サーバー（@posissue/server）</h2>
+<pre><code>import { createHandler } from "@posissue/server";
+
+export default createHandler({
+  forms?: FormTemplate[],       // 省略時は DEFAULT_FORMS。並び順がフォームの種別の並び順
+  labels?: ["via-widget"],      // 常に付けるラベル。via-widget は必ず含まれる
+  limits?: { projectPerDay: 50 },   // IP ごとの制限は RL_IP バインディング側で設定（1 分に 2 件）
+  minElapsedMs?: 3000,
+  maxUrls?: 2,
+});
+// Env（wrangler のバインディング）として以下を要求する
+interface Env {
+  DB: D1Database;
+  RL_IP: RateLimit;          // Rate Limiting バインディング
+  GITHUB_APP_ID: string;
+  GITHUB_APP_PRIVATE_KEY: string;   // PKCS#8 PEM
+  GITHUB_APP_SLUG: string;
+  GITHUB_WEBHOOK_SECRET: string;
+  TURNSTILE_SITE_KEY: string;
+  TURNSTILE_SECRET: string;
+}</code></pre>
+<p>制限値などのランタイム設定は型付きの設定オブジェクトで渡し、秘密情報は Env で渡す（コードに埋め込まない）。</p>
+
+</main><script src="nav.js"></script></body></html>

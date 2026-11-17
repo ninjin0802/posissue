@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>データモデル (D1) | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>5. データモデル (D1)</h1>
+<pre><code>CREATE TABLE projects (
+  key             TEXT PRIMARY KEY,        -- "pk_" + 24 文字
+  installation_id INTEGER NOT NULL,
+  repo            TEXT NOT NULL UNIQUE,    -- "owner/name"
+  allowed_origins TEXT NOT NULL DEFAULT '', -- カンマ区切り。空なら Origin 検査なし
+  daily_limit     INTEGER,                 -- NULL なら既定値
+  active          INTEGER NOT NULL DEFAULT 1,   -- App のアンインストール等で 0
+  banned          INTEGER NOT NULL DEFAULT 0,   -- 運営による停止。/setup では解除しない
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX projects_installation ON projects(installation_id);
+
+CREATE TABLE usage (            -- プロジェクトごとの日次件数
+  key   TEXT NOT NULL,
+  day   TEXT NOT NULL,          -- "YYYY-MM-DD"（UTC）
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (key, day)
+);
+
+CREATE TABLE recent_hashes (    -- 重複投稿検出
+  hash       TEXT PRIMARY KEY,  -- sha256(key + title + body)
+  created_at INTEGER NOT NULL   -- epoch 秒。24 時間より古いものは無視・削除
+);</code></pre>
+<ul>
+<li>報告者の IP や UA は保存しない（IP は Rate Limiting バインディングのキーとしてのみ使う）。</li>
+<li>キーの停止は <code>active = 0</code>。削除はしない。</li>
+<li><code>allowed_origins</code> の変更は v1 では運営が D1 を直接更新する。</li>
+</ul>
+
+</main><script src="nav.js"></script></body></html>

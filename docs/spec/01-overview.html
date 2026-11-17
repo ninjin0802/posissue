@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>概要と用語 | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>1. 概要と用語</h1>
+<h2>1.1 目的</h2>
+<p>OSS 開発者が、利用者からのフィードバックを GitHub Issue に集約できるようにします。利用者側は GitHub への登録なしに報告でき、開発者側は <code>projectKey</code> を渡すだけで導入できます。</p>
+<h2>1.2 利用形態</h2>
+<table>
+<tr><th>形態</th><th>説明</th></tr>
+<tr><td>公式ホスト（既定）</td><td>運営する公開サーバーを使う。作者は GitHub App をインストールし、発行された <code>projectKey</code> を設定するだけ。</td></tr>
+<tr><td>セルフホスト</td><td>作者が <code>@posissue/server</code> を使い、自分の Cloudflare アカウントにデプロイする。</td></tr>
+</table>
+<h2>1.3 用語</h2>
+<table>
+<tr><th>用語</th><th>意味</th></tr>
+<tr><td>作者 (Maintainer)</td><td>ウィジェットを導入する OSS の開発者。</td></tr>
+<tr><td>報告者 (Reporter)</td><td>ウィジェットからフィードバックを送る人。GitHub アカウント不要。</td></tr>
+<tr><td>プロジェクト</td><td>1つのリポジトリと1つの <code>projectKey</code> の組。</td></tr>
+<tr><td>projectKey</td><td><code>pk_</code> で始まる公開キー。秘密ではない（ブラウザに置かれる）。</td></tr>
+<tr><td>レポート (Report)</td><td>報告者が送る1件の内容。Issue 1件に対応する。</td></tr>
+<tr><td>種別 (kind)</td><td><code>bug</code> / <code>feature</code> / <code>other</code>。</td></tr>
+</table>
+<h2>1.4 v1 の基本方針</h2>
+<ul>
+<li>Issue は必ずウィジェット経由で作られ、<code>via-widget</code> ラベルが付く。</li>
+<li>報告者への返信機能は持たない。個人情報（メール等）は収集しない。</li>
+<li>スパム対策は最初から必須機能として組み込む（7章）。</li>
+</ul>
+
+</main><script src="nav.js"></script></body></html>

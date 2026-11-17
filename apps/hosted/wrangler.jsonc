@@ -1,0 +1,10 @@
+{
+  "name": "posissue",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "d1_databases": [{ "binding": "DB", "database_name": "posissue", "database_id": "REPLACE_WITH_D1_ID", "migrations_dir": "migrations" }],
+  // 7.1 #7: IP ごと 1 分に 2 件
+  "ratelimits": [{ "name": "RL_IP", "namespace_id": "1001", "simple": { "limit": 2, "period": 60 } }],
+  // secrets: GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET, TURNSTILE_SECRET
+  "vars": { "GITHUB_APP_SLUG": "posissue", "TURNSTILE_SITE_KEY": "REPLACE_WITH_SITE_KEY" }
+}

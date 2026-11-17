@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>アーキテクチャ | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>2. アーキテクチャ</h1>
+<h2>2.1 全体構成</h2>
+<pre><code>[Web サイト] &lt;script&gt; / npm init()  ─┐
+[アプリ]     WebView でフォーム URL    ─┼─▶ GET /r/:key（フォームページ, Turnstile）
+[独自 UI]    API 直接                 ─┘          │ POST /api/report
+                                                 ▼
+                                   Cloudflare Worker（@posissue/server）
+                                     ├ Turnstile 検証
+                                     ├ Rate Limiting バインディング
+                                     ├ D1（projects）
+                                     └ GitHub App 認証 ─▶ GitHub REST API（Issue 作成）</code></pre>
+<h2>2.2 技術スタック</h2>
+<table>
+<tr><th>役割</th><th>採用</th></tr>
+<tr><td>実行環境</td><td>Cloudflare Workers（1 Worker に API・フォーム・ウィジェット配信を集約）</td></tr>
+<tr><td>保存</td><td>D1（プロジェクト設定）</td></tr>
+<tr><td>投稿数制限</td><td>Workers Rate Limiting バインディング</td></tr>
+<tr><td>ボット対策</td><td>Cloudflare Turnstile</td></tr>
+<tr><td>言語</td><td>TypeScript（全パッケージ）</td></tr>
+<tr><td>GitHub 連携</td><td>GitHub App（Issues: Read &amp; Write、Metadata: Read のみ）</td></tr>
+</table>
+<h2>2.3 リポジトリ構成</h2>
+<pre><code>packages/
+  core/     @posissue/core    共通の型・バリデーション・Issue 本文の組み立て
+  server/   @posissue/server  createHandler()（Workers 用ハンドラ）
+  widget/   posissue          init() とブラウザ用 widget.js
+apps/
+  hosted/   公式ホスト（server を設定して使うだけ）
+docs/spec/  本仕様書（SSOT）</code></pre>
+<h2>2.4 依存の向き</h2>
+<p><code>widget</code> → <code>core</code>、<code>server</code> → <code>core</code>、<code>hosted</code> → <code>server</code>。<code>core</code> は実行環境に依存しない（DOM も Workers API も使わない）。</p>
+
+</main><script src="nav.js"></script></body></html>

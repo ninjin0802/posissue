@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ウィジェットとアプリ組み込み | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>8. ウィジェットとアプリ組み込み</h1>
+<h2>8.1 Web ウィジェット</h2>
+<ul>
+<li>画面の隅に固定ボタンを1つ置く。押すと <code>/r/:key</code> を iframe（モーダル）で開く。</li>
+<li>Shadow DOM を使い、導入先サイトの CSS と干渉しない。</li>
+<li>自動で集める情報：<code>page</code>（URL。クエリとハッシュは除く）、<code>userAgent</code>、<code>language</code>、<code>viewport</code>。これに設定の <code>meta</code> を加える。</li>
+<li>iframe との通信は <code>postMessage</code>。iframe からは <code>posissue:done</code>（送信完了）、<code>posissue:close</code> を送る。送信元 Origin を検証する。</li>
+<li>Esc で閉じる。ボタンには <code>aria-label</code> を付ける。閉じたらボタンにフォーカスを戻す。</li>
+</ul>
+<h2>8.2 フォームページ</h2>
+<ul>
+<li>入力：種別（カード型の選択）、タイトル、フォームの型（3.2）の各項目、Turnstile。種別を切り替えると項目も切り替わる。種別が1つなら選択は出さない。ハニーポットは画面外に置き、<code>tabindex=-1</code> と <code>aria-hidden</code> を付ける。</li>
+<li>送信成功時は Issue 番号を表示する（リンクは任意）。</li>
+<li>エラーコードごとに日本語・英語のメッセージを出す（<code>navigator.language</code> で切り替え）。</li>
+<li>JS バンドルなしの素の HTML と少しのインライン JS で作る。項目は型から <code>textContent</code> で組み立て、HTML を差し込まない。</li>
+<li>見た目：カード型の落ち着いたデザイン。ライト/ダーク自動切替、フォーカスリング、必須マーク、文字数カウンター、送信中スピナー、送信完了画面（Issue 番号へのリンク付き）。<code>prefers-reduced-motion</code> を尊重する。</li>
+</ul>
+<h2>8.3 アプリ組み込み</h2>
+<p>アプリは次の URL を WebView か外部ブラウザで開く。</p>
+<pre><code>{endpoint}/r/pk_xxx?app_version=1.2.0&amp;os=ios&amp;os_version=18.1</code></pre>
+<p>WebView の場合、送信完了を知るには <code>posissue:done</code> を <code>window.parent</code> に加えて、ページ遷移なしで <code>window.ReactNativeWebView</code> 等があればそこにも送る（MAY）。v1 ではネイティブ SDK を提供しない。</p>
+<h2>8.4 導入先サイトの CSP</h2>
+<p>厳しい CSP のサイトでは <code>script-src {endpoint}</code> と <code>frame-src {endpoint}</code> を許可してもらう必要がある。README に明記する。</p>
+
+</main><script src="nav.js"></script></body></html>

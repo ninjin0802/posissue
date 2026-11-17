@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>スパム対策とセキュリティ | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>7. スパム対策とセキュリティ</h1>
+<p>安い検査から順に行い、最初に失敗したところで止める。順番は MUST。</p>
+<h2>7.1 検査の順序</h2>
+<table>
+<tr><th>#</th><th>検査</th><th>失敗時</th></tr>
+<tr><td>1</td><td>JSON 形式・型・文字数（3.1 の制約）</td><td>400 invalid_input</td></tr>
+<tr><td>2</td><td>ハニーポット <code>hp</code> が空でない</td><td>422 spam</td></tr>
+<tr><td>3</td><td><code>elapsedMs</code> &lt; 3000</td><td>422 spam</td></tr>
+<tr><td>4</td><td>タイトルと全項目の URL 数 &gt; 2</td><td>422 spam</td></tr>
+<tr><td>5</td><td>プロジェクトが存在し有効</td><td>404 unknown_project</td></tr>
+<tr><td>6</td><td>Origin が自ドメインか許可リストに含まれる（リストが空でなければ）。フォームページは iframe 内から自ドメインとして送るので、埋め込み元の制限は 7.3 の <code>frame-ancestors</code> で行う</td><td>403 forbidden_origin</td></tr>
+<tr><td>7</td><td>IP ごとの投稿数（1 分に 2 件。Rate Limiting バインディングの期間は 10 秒か 60 秒のみ）</td><td>429 rate_limited</td></tr>
+<tr><td>8</td><td>Turnstile トークンを siteverify で検証</td><td>403 captcha_failed</td></tr>
+<tr><td>9</td><td>プロジェクトの日次件数（既定 50）</td><td>429 rate_limited</td></tr>
+<tr><td>10</td><td>同一内容（キー・種別・タイトル・全項目）のハッシュが 24 時間以内にある。Issue 作成に失敗したらハッシュを消して再送できるようにする</td><td>409 duplicate</td></tr>
+</table>
+<p>Turnstile は外部呼び出しのため、無料の検査（1〜7）の後に置く。</p>
+<h2>7.2 本文の無害化（MUST）</h2>
+<ul>
+<li><code>@</code> の直後にゼロ幅スペースを入れ、メンション通知を無効にする。</li>
+<li><code>#数字</code> の <code>#</code> の直後にゼロ幅スペースを入れ、Issue 参照による通知を防ぐ。</li>
+<li>環境情報の表では <code>|</code> とバッククォート、改行をエスケープする。</li>
+<li>HTML タグはそのまま文字として残してよい（GitHub 側で無害化される）。</li>
+</ul>
+<h2>7.3 その他のセキュリティ</h2>
+<ul>
+<li>フォームページの CSP <code>frame-ancestors</code> に許可リストを入れ、許可していないサイトには埋め込めないようにする（空なら <code>*</code>）。</li>
+<li>フォームページは <code>Content-Security-Policy</code> を付け、スクリプトは自身と Turnstile のみ許可。</li>
+<li>Webhook は署名を検証し、比較は時間一定の比較を行う。</li>
+<li>秘密情報（App 鍵・Turnstile secret）は Workers Secrets のみに置く。</li>
+<li>報告者の個人情報は保存しない（5章）。</li>
+</ul>
+<h2>7.4 悪用時の対応</h2>
+<p>運営は <code>UPDATE projects SET banned = 1 WHERE repo = ?</code> で止める。<code>/setup</code> は認証なしで呼べるため、<code>banned</code> は <code>/setup</code> では解除しない（MUST）。アンインストール等で <code>active = 0</code> になったものは、再インストール時に新しいキーで復活する。</p>
+
+</main><script src="nav.js"></script></body></html>

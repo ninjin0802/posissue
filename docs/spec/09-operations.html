@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>運用・制限・費用 | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>9. 運用・制限・費用</h1>
+<h2>9.1 デプロイ</h2>
+<ol>
+<li>GitHub App を作り（6.1）、鍵を PKCS#8 に変換する。</li>
+<li>Turnstile のサイトを作る。</li>
+<li><code>wrangler d1 create</code> → マイグレーション適用。</li>
+<li><code>wrangler secret put</code> で Env の秘密を登録。</li>
+<li><code>wrangler deploy</code>。</li>
+</ol>
+<h2>9.2 既定の制限値</h2>
+<table>
+<tr><th>項目</th><th>既定</th></tr>
+<tr><td>IP ごと</td><td>1 分に 2 件（wrangler の ratelimits 設定）</td></tr>
+<tr><td>プロジェクトごと</td><td>1 日 50 件</td></tr>
+<tr><td>最短入力時間</td><td>3 秒</td></tr>
+<tr><td>URL 上限</td><td>2 個</td></tr>
+<tr><td>タイトル / 本文</td><td>100 / 5000 文字</td></tr>
+<tr><td>重複判定期間</td><td>24 時間</td></tr>
+</table>
+<h2>9.3 費用の目安</h2>
+<p>Workers・D1・Turnstile はいずれも無料枠から始められる。利用量が増えた時点で有料プランを検討する。</p>
+<h2>9.4 ログ</h2>
+<p>拒否理由（エラーコード）とプロジェクトキーのみを <code>console.log</code> に出す。本文・IP は出さない。</p>
+
+</main><script src="nav.js"></script></body></html>

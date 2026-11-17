@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub App 連携 | PosIssue 仕様書</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>6. GitHub App 連携</h1>
+<h2>6.1 App の設定</h2>
+<table>
+<tr><th>項目</th><th>値</th></tr>
+<tr><td>権限</td><td>Issues: Read &amp; write / Metadata: Read-only（これ以外は付けない）</td></tr>
+<tr><td>Setup URL</td><td><code>{endpoint}/setup</code>（Redirect on update を有効）</td></tr>
+<tr><td>Webhook URL</td><td><code>{endpoint}/webhook</code></td></tr>
+<tr><td>購読イベント</td><td>Installation、Installation repositories</td></tr>
+</table>
+<h2>6.2 認証</h2>
+<ol>
+<li>App の秘密鍵（PKCS#8 に変換したもの）で RS256 の JWT を作る。<code>iat</code> は 60 秒前、<code>exp</code> は 9 分後。署名は Web Crypto を使う。</li>
+<li><code>POST /app/installations/{id}/access_tokens</code> でインストールトークンを得る。</li>
+<li>トークンは有効期限の 5 分前まで Worker のメモリにキャッシュしてよい（MAY）。</li>
+</ol>
+<div class="note">GitHub が配る鍵は PKCS#1（<code>BEGIN RSA PRIVATE KEY</code>）。登録前に <code>openssl pkcs8 -topk8 -nocrypt -in app.pem -out app.pk8.pem</code> で変換する。</div>
+<h2>6.3 Issue の形式</h2>
+<pre><code>POST /repos/{owner}/{repo}/issues
+title:  "[Bug] {title}"   // 種別の接頭辞: [Bug] / [Feature] / [Feedback]
+labels: ["via-widget", "bug" | "enhancement" | "feedback", ...設定のラベル]
+body:
+{本文（無害化済み）}
+
+---
+&lt;details&gt;&lt;summary&gt;環境情報&lt;/summary&gt;
+
+| key | value |
+|---|---|
+| page | https://... |
+| userAgent | ... |
+| ...meta | ... |
+&lt;/details&gt;
+
+_PosIssue ウィジェットから送信されました_</code></pre>
+<p>ラベルが存在しない場合、GitHub は自動で作る（Issues 書き込み権限で可）。</p>
+
+</main><script src="nav.js"></script></body></html>
