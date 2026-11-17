@@ -7,8 +7,12 @@
     "apps/*"
   ],
   "scripts": {
+    "build": "npm run build -w posissue -w @posissue/core -w @posissue/server",
+    "pretypecheck": "npm run build",
+    "typecheck": "tsc --noEmit -p .",
+    "pretest": "npm run build",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p ."
+    "publish:all": "npm publish -w posissue -w @posissue/core -w @posissue/server"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261117.1",

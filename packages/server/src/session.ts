@@ -4,7 +4,7 @@
 const enc = new TextEncoder();
 const b64url = (b: Uint8Array) => btoa(String.fromCharCode(...b)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
 const unb64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
-const hmacKey = (secret: string, use: KeyUsage[]) =>
+const hmacKey = (secret: string, use: ("sign" | "verify")[]) =>
   crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, use);
 
 export const SESSION_TTL_SEC = 15 * 60;
