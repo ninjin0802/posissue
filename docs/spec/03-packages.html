@@ -11,7 +11,7 @@ export interface ReportInput {
   kind: ReportKind;
   title: string;        // 1〜100 文字
   fields: Record&lt;string, string&gt;; // FormField.id → 値。合計 5000 文字まで
-  meta?: Record&lt;string, string&gt;; // 自動収集・任意情報。キー 20 個まで、値 200 文字まで
+  meta?: Record&lt;string, string&gt;; // 自動収集・任意情報。キー 20 個まで、値 200 文字まで。キーは英数字・_・- のみ
 }
 
 export interface ReportRequest extends ReportInput {
@@ -67,9 +67,10 @@ init({
   kinds?: ["bug", "feature", "other"],     // 表示する種別
   position?: "bottom-right" | "bottom-left",
   label?: "フィードバック",                  // ボタンの文言
+  lang?: "ja" | "en",                      // フォームの言語。省略時はブラウザの言語
   meta?: { appVersion: "1.2.0" },          // Issue に付ける追加情報
 }): { open(): void; close(): void; destroy(): void };</code></pre>
-<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。<code>data-position</code>、<code>data-label</code> も使える。</p>
+<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。<code>data-position</code>、<code>data-label</code>、<code>data-lang</code> も使える。</p>
 <h2>3.4 サーバー（@posissue/server）</h2>
 <pre><code>import { createHandler } from "@posissue/server";
 

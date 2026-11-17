@@ -80,6 +80,7 @@ export type ReportResponse =
   | { ok: false; error: ErrorCode };
 
 export const LIMITS = { title: 100, body: 5000, metaKeys: 20, metaValue: 200 } as const;
+const META_KEY_RE = /^[A-Za-z0-9_-]{1,50}$/; // meta のキーは記号なし（Issue の表にそのまま出すため）
 const KEY_RE = /^pk_[A-Za-z0-9]{24}$/;
 
 const str = (v: unknown, max: number): v is string =>
@@ -132,7 +133,7 @@ export function parseReportRequest(v: unknown, forms: FormTemplate[] = DEFAULT_F
     const entries = Object.entries(o.meta);
     if (entries.length > LIMITS.metaKeys) return null;
     for (const [k, val] of entries) {
-      if (k.length > 50 || typeof val !== "string" || val.length > LIMITS.metaValue) return null;
+      if (!META_KEY_RE.test(k) || typeof val !== "string" || val.length > LIMITS.metaValue) return null;
     }
     meta = Object.fromEntries(entries) as Record<string, string>;
   }
@@ -147,7 +148,9 @@ export function parseReportRequest(v: unknown, forms: FormTemplate[] = DEFAULT_F
 export const reportUrls = (r: ReportInput) =>
   countUrls(r.title) + Object.values(r.fields).reduce((n, v) => n + countUrls(v), 0);
 
-export const countUrls = (s: string) => (s.match(/https?:\/\/|www\./gi) ?? []).length;
+// スキーム付き・www.・Markdown のリンクや画像 "](" ・プロトコル相対 "//host" を数える
+export const countUrls = (s: string) =>
+  (s.match(/https?:\/\/|www\.|\]\(|(?:^|[\s("'=<])\/\/[^\s/]/gim) ?? []).length;
 
 const ZWSP = "​";
 /** @メンションと #番号 の通知を無効化する（7.2）。 */
@@ -156,6 +159,10 @@ export const neutralize = (s: string) =>
 
 const cell = (s: string) =>
   neutralize(s).replace(/[|`\\]/g, (c) => "\\" + c).replace(/\r?\n/g, " ");
+
+// meta は報告者が自由に入れられる。Markdown/HTML の記号を全部文字参照にして、リンクにならないようにする（URL 数の制限の抜け道を塞ぐ）
+const code = (s: string) =>
+  `<code>${neutralize(s).replace(/[&<>|[\]()!*_`\\:~.]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\r?\n/g, " ")}</code>`;
 
 const PREFIX: Record<ReportKind, string> = { bug: "[Bug]", feature: "[Feature]", other: "[Feedback]" };
 const KIND_LABEL: Record<ReportKind, string> = { bug: "bug", feature: "enhancement", other: "feedback" };
@@ -173,7 +180,7 @@ export function buildIssue(r: ReportInput, forms: FormTemplate[] = DEFAULT_FORMS
   const meta = Object.entries(r.meta ?? {});
   const table = meta.length
     ? `\n\n---\n<details><summary>Environment</summary>\n\n| key | value |\n|---|---|\n${meta
-        .map(([k, v]) => `| ${cell(k)} | ${cell(v)} |`).join("\n")}\n</details>`
+        .map(([k, v]) => `| ${cell(k)} | ${code(v)} |`).join("\n")}\n</details>`
     : "\n\n---";
   return {
     title: `${PREFIX[r.kind]} ${neutralize(r.title)}`,

@@ -44,14 +44,26 @@ async function installationToken(c: GitHubCreds, id: number) {
   return r.token as string;
 }
 
-/** installation が本当にこの App のものか確かめる（App の JWT でしか取れない）。 */
-export const getInstallation = async (c: GitHubCreds, id: number) =>
-  gh(`/app/installations/${id}`, await appJwt(c.appId, c.privateKey));
-
-export async function listInstallationRepos(c: GitHubCreds, id: number): Promise<string[]> {
-  // shortcut: 先頭 100 件のみ取得。1 インストールで 100 リポジトリを超えたらページングを足す
-  const r = await gh(`/installation/repositories?per_page=100`, await installationToken(c, id));
-  return r.repositories.map((x: { full_name: string }) => x.full_name);
+/**
+ * OAuth の code をユーザートークンに換え、そのインストールのうち「そのユーザー自身が見られるリポジトリ」だけを返す。
+ * Organization のメンバーが、自分に権限のないリポジトリ名やキーを見られないようにするため。
+ * 確かめられなければ null。
+ */
+export async function userInstallationRepos(clientId: string, clientSecret: string, code: string, id: number): Promise<string[] | null> {
+  const res = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/json", "user-agent": "posissue" },
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code }),
+  });
+  const tok = (await res.json()) as { access_token?: string };
+  if (!tok.access_token) return null;
+  // shortcut: 先頭 100 件のみ。100 リポジトリを超えたらページングを足す
+  const res2 = await fetch(`${API}/user/installations/${id}/repositories?per_page=100`, {
+    headers: { authorization: `Bearer ${tok.access_token}`, accept: "application/vnd.github+json", "user-agent": "posissue" },
+  });
+  if (!res2.ok) return null; // 404 = そのユーザーはこのインストールにアクセスできない
+  const r = (await res2.json()) as { repositories: { full_name: string }[] };
+  return r.repositories.map((x) => x.full_name);
 }
 
 export async function createIssue(
