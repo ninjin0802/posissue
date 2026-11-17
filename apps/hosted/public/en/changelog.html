@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Changelog | PosIssue</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><style>:root{--bg:#fbfbfe;--fg:#16161d;--muted:#5f5f70;--line:#e6e6ef;--card:#fff;--accent:#5b5bd6}@media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--fg:#ececf3;--muted:#9d9db0;--line:#24242f;--card:#14141c;--accent:#8b8bf5}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.85 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}.w{max-width:760px;margin:0 auto;padding:28px 20px 64px}header a{display:inline-flex;align-items:center;gap:10px;font-weight:800;text-decoration:none;color:inherit}header img{width:32px;height:32px}h1{font-size:28px;margin:28px 0 6px;letter-spacing:-.01em}.meta{color:var(--muted);font-size:14px;margin:0 0 28px}h2{font-size:19px;margin:34px 0 8px;padding-top:14px;border-top:1px solid var(--line)}ul,ol{padding-left:1.4em}li{margin:4px 0}a{color:var(--accent)}table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0;display:block;overflow-x:auto}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--card)}.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--muted)}footer{margin-top:48px;color:var(--muted);font-size:14px;display:flex;gap:16px;flex-wrap:wrap}</style><style>.rel h2{display:flex;align-items:baseline;gap:12px}.rel time{font-size:14px;font-weight:400;color:var(--muted)}h3{font-size:15px;margin:18px 0 4px;color:var(--accent)}</style><style>.rel h2{display:flex;align-items:baseline;gap:12px}.rel time{font-size:14px;font-weight:400;color:var(--muted)}h3{font-size:15px;margin:18px 0 4px;color:var(--accent)}</style></head><body><div class="w"><header><a href="/"><img src="/icon.svg" alt="" width="32" height="32">PosIssue</a></header>
+<h1>Changelog</h1>
+<p class="meta">Release history of PosIssue. Details are also on <a href="https://github.com/ninjin0802/posissue/releases">GitHub Releases</a>.</p>
+<section class="rel" id="v1-2-0"><h2>v1.2.0 <time>2026-11-17</time></h2>
+<h3>New</h3><ul><li><strong>Approval mode</strong>: review reports before they become issues. On by default for public repositories, immediate for private ones. Switch it in the dashboard settings.</li>
+<li>Publish or discard pending reports one by one in the dashboard. They are deleted automatically after 14 days.</li>
+<li>The <strong>dashboard</strong> now lives at <code>/admin</code> and is linked from the home page (<code>/keys</code> still works).</li></ul>
+<h3>Improvements</h3><ul><li>Redesigned dashboard (tabs per repository, pending counts, settings toggles).</li>
+<li>A separate rate limit for maintainer actions so you can review many reports at once.</li></ul>
+<h3>Other</h3><ul><li>The privacy policy now explains that pending reports are stored for up to 14 days.</li></ul></section>
+<section class="rel" id="v1-1-0"><h2>v1.1.0 <time>2026-11-17</time></h2>
+<h3>New</h3><ul><li>Change <strong>allowed sites</strong> (up to 10) and the <strong>daily limit</strong> (1–1000) per repository from the dashboard.</li></ul>
+<h3>Security</h3><ul><li>Only repository admins (admin / maintain) can change settings.</li>
+<li>Settings tokens now include the installation ID and expire after 15 minutes.</li></ul></section>
+<section class="rel" id="v1-0-0"><h2>v1.0.0 <time>2026-11-17</time></h2>
+<p>The first public release.</p>
+<h3>Highlights</h3><ul><li>A widget that lets anyone without a GitHub account send issues: one <code>&lt;script&gt;</code> line on a website, or a URL opened in an app WebView.</li>
+<li><strong>Typed forms</strong>: one <code>FormTemplate</code> defines the UI, validation and issue body.</li>
+<li>A beautiful form (automatic light/dark, Japanese/English switch).</li>
+<li>Spam protection: Cloudflare Turnstile, honeypot, timing, link count, per-IP and daily limits, duplicate detection, neutralized @mentions and #refs.</li>
+<li>GitHub App installation, a key page and a CLI (<code>npx github:ninjin0802/posissue keys</code>).</li>
+<li><code>/llms.txt</code> for AI agents and <code>AGENTS.md</code> for contributors.</li>
+<li>Hosted at <a href="https://posissue.2nj.lol">https://posissue.2nj.lol</a> (Cloudflare Workers), OGP, privacy policy and terms.</li></ul>
+<h3>Security</h3><ul><li>Fixed issues found in a pre-release security audit (private repository names leaking from the setup page, login CSRF, link counting, Turnstile hostname check, request size limit, CSP, and more).</li></ul></section>
+<footer><a href="/?lang=en">Home</a><a href="/en/privacy">Privacy</a><a href="/en/terms">Terms</a><a href="/en/changelog">Changelog</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><a href="/changelog" hreflang="ja" lang="ja">日本語</a><span>© 2026 ninjin0802</span></footer></div></body></html>

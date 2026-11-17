@@ -180,7 +180,7 @@ nav{position:sticky;top:0;z-index:5;backdrop-filter:saturate(1.6) blur(12px);bac
 nav .w{display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{font-weight:800;letter-spacing:-.02em;font-size:18px;text-decoration:none;display:flex;gap:8px;align-items:center}
 .logo img{width:28px;height:28px;display:block}
-nav .links{display:flex;gap:18px;font-size:14px;align-items:center}nav .sep{width:1px;height:18px;background:var(--line);margin:0 -4px}nav .links a.ib{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;margin:0 -8px}nav .links a.ib:hover{background:var(--soft);color:var(--accent)}nav .links a.ib:focus-visible{outline:2px solid var(--accent);outline-offset:1px}nav .links a{text-decoration:none;color:var(--muted)}nav .links a:hover{color:var(--fg)}
+nav .links{display:flex;gap:18px;font-size:14px;align-items:center}nav .links a.lang{font-weight:700;font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--fg)}nav .links a.lang:hover{border-color:var(--accent)}nav .sep{width:1px;height:18px;background:var(--line);margin:0 -4px}nav .links a.ib{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;margin:0 -8px}nav .links a.ib:hover{background:var(--soft);color:var(--accent)}nav .links a.ib:focus-visible{outline:2px solid var(--accent);outline-offset:1px}nav .links a{text-decoration:none;color:var(--muted)}nav .links a:hover{color:var(--fg)}
 .hero{position:relative;overflow:hidden;padding:88px 0 72px}
 .hero:before{content:"";position:absolute;inset:-40% -10% auto;height:640px;background:radial-gradient(closest-side,var(--soft),transparent),radial-gradient(closest-side at 70% 40%,rgba(192,91,214,.10),transparent);pointer-events:none}
 .hero .w{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
@@ -230,14 +230,24 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}`;
 
 /** 公式ホストのトップページ。demoKey があればフォームの実物を埋め込み、ウィジェットも置く（自分自身への報告になる）。 */
-export function landingPage(o: { origin: string; appSlug: string; demoKey?: string; repoUrl: string; nonce: string }) {
+export type Lang = "ja" | "en";
+/** 日英の切り替え。t("日本語", "English") */
+export const tr = (lang: Lang) => (ja: string, en: string) => (lang === "en" ? en : ja);
+/** プライバシーポリシーなど静的ページの言語別 URL（英語は /en/ の下） */
+export const docPath = (lang: Lang, page: "privacy" | "terms" | "changelog") => (lang === "en" ? `/en/${page}` : `/${page}`);
+const DESC_JA = "サイトやアプリに 1 行置くだけ。利用者のバグ報告や要望が、あなたの OSS リポジトリに GitHub Issue として届きます。";
+const DESC_EN = "Add one line to your site or app. Bug reports and feature requests from your users arrive in your open-source repository as GitHub issues — no GitHub account needed.";
+
+export function landingPage(o: { origin: string; appSlug: string; demoKey?: string; repoUrl: string; nonce: string; lang: Lang }) {
+  const t = tr(o.lang);
+  const other: Lang = o.lang === "ja" ? "en" : "ja";
   const install = `https://github.com/apps/${encodeURIComponent(o.appSlug)}/installations/new`;
   const demo = o.demoKey
-    ? `<iframe src="/r/${esc(o.demoKey)}?kinds=bug,feature,other" title="PosIssue デモフォーム" loading="lazy"></iframe>`
-    : `<div class="mock" aria-hidden="true"><b>フィードバックを送る</b><span></span><span class="t"></span><span class="t"></span><span class="s"></span></div>`;
+    ? `<iframe src="/r/${esc(o.demoKey)}?kinds=bug,feature,other&amp;lang=${o.lang}" title="${t("PosIssue デモフォーム", "PosIssue demo form")}" loading="lazy"></iframe>`
+    : `<div class="mock" aria-hidden="true"><b>${t("フィードバックを送る", "Send feedback")}</b><span></span><span class="t"></span><span class="t"></span><span class="s"></span></div>`;
   const o_ = esc(o.origin);
   const codes: [string, string][] = [
-    ["Web サイト", `<span class="c">&lt;!-- &lt;/body&gt; の前に 1 行 --&gt;</span>
+    [t("Web サイト", "Website"), `<span class="c">&lt;!-- ${t("&lt;/body&gt; の前に 1 行", "One line before &lt;/body&gt;")} --&gt;</span>
 &lt;script src=<span class="s">"${o_}/widget.js"</span>
         data-key=<span class="s">"pk_xxx"</span> async&gt;&lt;/script&gt;`],
     ["npm", `<span class="k">import</span> { init } <span class="k">from</span> <span class="s">"posissue"</span>;
@@ -247,48 +257,50 @@ init({
   endpoint: <span class="s">"${o_}"</span>,
   meta: { appVersion: <span class="s">"1.2.0"</span> },
 });`],
-    ["アプリ", `<span class="c">// iOS / Android / Flutter / Electron … WebView で開くだけ</span>
+    [t("アプリ", "Apps"), `<span class="c">// iOS / Android / Flutter / Electron … ${t("WebView で開くだけ", "just open it in a WebView")}</span>
 ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
   ];
-  return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark"><title>PosIssue — GitHub アカウントなしで Issue を送れるウィジェット</title>
-<meta name="description" content="サイトやアプリに 1 行置くだけ。利用者のバグ報告や要望が、あなたの OSS リポジトリに GitHub Issue として届きます。">
+  return `<!doctype html><html lang="${o.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>${t("PosIssue — GitHub アカウントなしで Issue を送れるウィジェット", "PosIssue — Let anyone file GitHub issues, no account needed")}</title>
+<meta name="description" content="${t(DESC_JA, DESC_EN)}">
+<link rel="alternate" hreflang="ja" href="${esc(o.origin)}/?lang=ja"><link rel="alternate" hreflang="en" href="${esc(o.origin)}/?lang=en">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <meta property="og:type" content="website"><meta property="og:site_name" content="PosIssue">
 <meta property="og:url" content="${esc(o.origin)}/">
-<meta property="og:title" content="PosIssue — アカウントがなくても、だれでも Issue を。">
-<meta property="og:description" content="サイトやアプリに 1 行置くだけ。利用者のバグ報告や要望が、あなたの OSS リポジトリに GitHub Issue として届きます。">
+<meta property="og:title" content="${t("PosIssue — アカウントがなくても、だれでも Issue を。", "PosIssue — No account? Anyone can file an issue.")}">
+<meta property="og:description" content="${t(DESC_JA, DESC_EN)}">
 <meta property="og:image" content="${esc(o.origin)}/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="PosIssue — アカウントがなくても、だれでも Issue を。">
+<meta property="og:image:alt" content="PosIssue">
 <meta name="twitter:card" content="summary_large_image"><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly docs"><style>${LANDING_STYLE}</style></head><body>
 <nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
-<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a class="h" href="/changelog">リリースノート</a><a class="h" href="#author">作った人</a><span class="sep" aria-hidden="true"></span>
-<a class="ib" href="/admin" aria-label="管理画面" title="管理画面"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
+<a class="h" href="#features">${t("特長", "Features")}</a><a class="h" href="#start">${t("はじめかた", "Get started")}</a><a class="h" href="${docPath(o.lang, "changelog")}">${t("リリースノート", "Changelog")}</a><a class="h" href="#author">${t("作った人", "Author")}</a><span class="sep" aria-hidden="true"></span>
+<a class="lang" href="/?lang=${other}" hreflang="${other}" lang="${other}" title="${other === "en" ? "English" : "日本語"}">${other === "en" ? "EN" : "日本語"}</a>
+<a class="ib" href="/admin" aria-label="${t("管理画面", "Dashboard")}" title="${t("管理画面", "Dashboard")}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
 <a class="ib" href="${esc(o.repoUrl)}" aria-label="GitHub" title="GitHub">${GH_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</a></div></div></nav>
 <header class="hero"><div class="w"><div>
-<img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(91,91,214,.35))"><span class="pill">OSS のための報告ウィジェット</span>
-<h1><span>アカウントがなくても、</span><br><em>だれでも Issue を。</em></h1>
-<p class="lead">サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。</p>
-<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="/admin">管理画面</a><a class="btn" href="${esc(o.repoUrl)}">ソースを見る</a></div>
+<img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(91,91,214,.35))"><span class="pill">${t("OSS のための報告ウィジェット", "A feedback widget for open source")}</span>
+<h1>${t("<span>アカウントがなくても、</span><br><em>だれでも Issue を。</em>", "<span>No account needed.</span><br><em>Anyone can file an issue.</em>")}</h1>
+<p class="lead">${t("サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。", "Add one line to your site or app. Bug reports and feature requests from your users arrive in your repository as GitHub issues.")}</p>
+<div class="cta"><a class="btn p" href="${esc(install)}">${t("GitHub App をインストール →", "Install the GitHub App →")}</a><a class="btn" href="/admin">${t("管理画面", "Dashboard")}</a><a class="btn" href="${esc(o.repoUrl)}">${t("ソースを見る", "View source")}</a></div>
 </div><div class="demo">${demo}</div></div></header>
 
 <section id="features"><div class="w">
-<h2>報告のハードルを、ゼロに。</h2><p class="sub">GitHub に登録していない利用者の声も、取りこぼさずに集められます。</p>
+<h2>${t("報告のハードルを、ゼロに。", "Zero friction for reporters.")}</h2><p class="sub">${t("GitHub に登録していない利用者の声も、取りこぼさずに集められます。", "Hear from users who don’t have a GitHub account, too.")}</p>
 <div class="grid">
-<div class="card"><div class="ic">🙋</div><h3>アカウント不要</h3><p>報告する人は GitHub に登録しなくても送れます。個人情報も集めません。</p></div>
-<div class="card"><div class="ic">🧩</div><h3>1 行で導入</h3><p>script タグを貼るか init() を呼ぶだけ。アプリは WebView で URL を開くだけです。</p></div>
-<div class="card"><div class="ic">📐</div><h3>フォームは型で決まる</h3><p>FormTemplate を渡すと、画面・入力チェック・Issue 本文の形がそろって決まります。</p></div>
-<div class="card"><div class="ic">🛡️</div><h3>スパム対策つき</h3><p>Turnstile、投稿数の制限、重複検出、@メンションの無効化を最初から備えています。</p></div>
-<div class="card"><div class="ic">🌗</div><h3>きれいなフォーム</h3><p>ライト/ダーク自動切替、日本語・英語対応。どのサイトにもなじみます。</p></div>
-<div class="card"><div class="ic">🔓</div><h3>オープンソース</h3><p>MIT ライセンス。Cloudflare Workers に自分でデプロイすることもできます。</p></div>
+<div class="card"><div class="ic">🙋</div><h3>${t("アカウント不要", "No account needed")}</h3><p>${t("報告する人は GitHub に登録しなくても送れます。個人情報も集めません。", "Reporters don’t need a GitHub account, and no personal data is collected.")}</p></div>
+<div class="card"><div class="ic">🧩</div><h3>${t("1 行で導入", "One-line setup")}</h3><p>${t("script タグを貼るか init() を呼ぶだけ。アプリは WebView で URL を開くだけです。", "Paste a script tag or call init(). In apps, just open a URL in a WebView.")}</p></div>
+<div class="card"><div class="ic">📐</div><h3>${t("フォームは型で決まる", "Typed forms")}</h3><p>${t("FormTemplate を渡すと、画面・入力チェック・Issue 本文の形がそろって決まります。", "One FormTemplate defines the UI, the validation and the issue body — always in sync.")}</p></div>
+<div class="card"><div class="ic">🛡️</div><h3>${t("スパム対策つき", "Built-in spam protection")}</h3><p>${t("Turnstile、投稿数の制限、重複検出、@メンションの無効化を最初から備えています。承認モードも選べます。", "Turnstile, rate limits, duplicate detection and neutralized @mentions out of the box, plus an optional approval mode.")}</p></div>
+<div class="card"><div class="ic">🌗</div><h3>${t("きれいなフォーム", "A beautiful form")}</h3><p>${t("ライト/ダーク自動切替、日本語・英語対応。どのサイトにもなじみます。", "Automatic light/dark mode and Japanese/English. Fits any site.")}</p></div>
+<div class="card"><div class="ic">🔓</div><h3>${t("オープンソース", "Open source")}</h3><p>${t("MIT ライセンス。Cloudflare Workers に自分でデプロイすることもできます。", "MIT licensed. You can also self-host it on Cloudflare Workers.")}</p></div>
 </div></div></section>
 
 <section id="start"><div class="w">
-<h2>3 ステップではじめる</h2><p class="sub">数分で、最初の報告が届きます。</p>
+<h2>${t("3 ステップではじめる", "Get started in 3 steps")}</h2><p class="sub">${t("数分で、最初の報告が届きます。", "Your first report arrives in minutes.")}</p>
 <div class="steps">
-<div class="card"><h3>App をインストール</h3><p>GitHub App をリポジトリに入れると、projectKey が発行されます。</p></div>
-<div class="card"><h3>ウィジェットを置く</h3><p>サイトなら 1 行、アプリなら URL を開くだけ。</p></div>
-<div class="card"><h3>Issue が届く</h3><p>via-widget ラベル付きで、環境情報もそろった Issue になります。</p></div>
+<div class="card"><h3>${t("App をインストール", "Install the App")}</h3><p>${t("GitHub App をリポジトリに入れると、projectKey が発行されます。", "Install the GitHub App on your repository to get a project key.")}</p></div>
+<div class="card"><h3>${t("ウィジェットを置く", "Add the widget")}</h3><p>${t("サイトなら 1 行、アプリなら URL を開くだけ。", "One line on a website, or open a URL in an app.")}</p></div>
+<div class="card"><h3>${t("Issue が届く", "Receive issues")}</h3><p>${t("via-widget ラベル付きで、環境情報もそろった Issue になります。", "Issues arrive labeled via-widget, with environment details attached.")}</p></div>
 </div>
 <div style="margin-top:28px"><div class="tabs" role="tablist">${codes.map(([n], i) =>
   `<button role="tab" aria-selected="${i === 0}" data-i="${i}">${n}</button>`).join("")}</div>
@@ -296,8 +308,8 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 </div></section>
 
 <section><div class="w two"><div>
-<h2>フォームは、型を書くだけ。</h2>
-<p class="sub">項目の種類は text / textarea / select / checkbox。書き間違いはエディタが教えてくれて、起動時にもチェックされます。</p>
+<h2>${t("フォームは、型を書くだけ。", "Just write a type.")}</h2>
+<p class="sub">${t("項目の種類は text / textarea / select / checkbox。書き間違いはエディタが教えてくれて、起動時にもチェックされます。", "Fields can be text, textarea, select or checkbox. Your editor catches mistakes, and they are checked again at startup.")}</p>
 </div><pre class="solo"><span class="k">const</span> forms: FormTemplate[] = [{
   kind: <span class="s">"bug"</span>,
   label: { en: <span class="s">"Bug"</span>, ja: <span class="s">"バグ報告"</span> },
@@ -310,31 +322,31 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 <span class="k">export default</span> createHandler({ forms });</pre></div></section>
 
 <section><div class="w">
-<h2>スパムは、届く前に止める。</h2><p class="sub">安い検査から順に行い、どれかに引っかかった時点で止めます。</p>
-<div class="flow"><span>入力チェック</span><span>ハニーポット</span><span>送信速度</span><span>URL の数</span><span>埋め込み元</span><span>IP ごとの制限</span><span>Turnstile</span><span>1 日の上限</span><span>重複検出</span><span>Issue 作成</span></div>
+<h2>${t("スパムは、届く前に止める。", "Stop spam before it lands.")}</h2><p class="sub">${t("安い検査から順に行い、どれかに引っかかった時点で止めます。", "Cheap checks run first, and a report stops at the first one it fails.")}</p>
+<div class="flow">${(o.lang === "en" ? ["Validation", "Honeypot", "Speed", "Link count", "Origin", "Per-IP limit", "Turnstile", "Daily limit", "Duplicates", "Issue"] : ["入力チェック", "ハニーポット", "送信速度", "URL の数", "埋め込み元", "IP ごとの制限", "Turnstile", "1 日の上限", "重複検出", "Issue 作成"]).map((x) => `<span>${x}</span>`).join("")}</div>
 </div></section>
 
 <section id="author" style="padding-bottom:0"><div class="w"><div class="author">
-<img class="av" src="/author.png" alt="ninjin のアイコン" width="96" height="96" loading="lazy">
-<div class="ab"><span class="eyebrow">作った人</span>
-<h2>ninjin</h2><p class="role">個人開発者</p>
-<p class="bio">個人開発者です。Web アプリ、Android アプリ、プログラミング言語まで、気になったものは作って確かめています。</p>
+<img class="av" src="/author.png" alt="${t("ninjin のアイコン", "ninjin’s avatar")}" width="96" height="96" loading="lazy">
+<div class="ab"><span class="eyebrow">${t("作った人", "Made by")}</span>
+<h2>ninjin</h2><p class="role">${t("個人開発者", "Indie developer")}</p>
+<p class="bio">${t("個人開発者です。Web アプリ、Android アプリ、プログラミング言語まで、気になったものは作って確かめています。", "An indie developer. From web apps and Android apps to programming languages, I build whatever catches my interest to see how it works.")}</p>
 <div class="links"><a class="pill" href="https://github.com/ninjin0802" rel="me noopener" target="_blank">${GH_ICON}<span>GitHub</span></a>
 <a class="pill" href="https://2nj.lol" rel="me noopener" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>2nj.lol</span></a></div>
 </div></div></div></section>
 
 <section><div class="w"><div class="final">
-<h2>利用者の声を、もっと近くに。</h2><p class="sub">無料で、いますぐ始められます。</p>
-<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="/admin">管理画面</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
+<h2>${t("利用者の声を、もっと近くに。", "Bring your users’ voices closer.")}</h2><p class="sub">${t("無料で、いますぐ始められます。", "Free. Start right now.")}</p>
+<div class="cta"><a class="btn p" href="${esc(install)}">${t("GitHub App をインストール →", "Install the GitHub App →")}</a><a class="btn" href="/admin">${t("管理画面", "Dashboard")}</a><a class="btn" href="${esc(o.repoUrl)}#readme">${t("ドキュメント", "Docs")}</a></div>
 </div></div></section>
 
-<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><span class="fl"><a href="/changelog">リリースノート</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="${esc(o.repoUrl)}">GitHub</a></span></div></footer>
+<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><span class="fl"><a href="${docPath(o.lang, "changelog")}">${t("リリースノート", "Changelog")}</a><a href="${docPath(o.lang, "privacy")}">${t("プライバシーポリシー", "Privacy")}</a><a href="${docPath(o.lang, "terms")}">${t("利用規約", "Terms")}</a><a href="${esc(o.repoUrl)}">GitHub</a></span></div></footer>
 <script nonce="${o.nonce}">
 document.querySelectorAll("[role=tab]").forEach(function(b){b.addEventListener("click",function(){
 document.querySelectorAll("[role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b)});
 document.querySelectorAll("[data-p]").forEach(function(p){p.hidden=p.dataset.p!==b.dataset.i})})});
 </script>
-${o.demoKey ? `<script src="/widget.js" data-key="${esc(o.demoKey)}" async></script>` : ""}
+${o.demoKey ? `<script src="/widget.js" data-key="${esc(o.demoKey)}" data-lang="${o.lang}" async></script>` : ""}
 </body></html>`;
 }
 
@@ -443,10 +455,11 @@ footer{max-width:880px;margin:0 auto;padding:0 20px 40px;display:flex;flex-wrap:
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
 
 /** ログインした作者向けの管理画面（/admin・/setup）。キーの確認、設定、承認待ちの処理。 */
-export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; session: string; defaultDailyLimit: number; justInstalled: boolean }) {
+export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; session: string; defaultDailyLimit: number; justInstalled: boolean; lang: Lang }) {
+  const t = tr(o.lang);
   const install = `https://github.com/apps/${encodeURIComponent(o.appSlug)}/installations/new`;
   const copyBtn = (v: string, label: string) =>
-    `<button type="button" class="cp" data-copy="${esc(v)}" aria-label="${esc(label)}をコピー">${COPY_ICON}<span>コピー</span></button>`;
+    `<button type="button" class="cp" data-copy="${esc(v)}" aria-label="${esc(t(`${label}をコピー`, `Copy ${label}`))}">${COPY_ICON}<span>${t("コピー", "Copy")}</span></button>`;
   const totalPending = o.rows.reduce((n, r) => n + (r.pending?.length ?? 0), 0);
   // 承認待ちの表示用に、Issue 本文の Markdown の記号を読みやすく整える（中身は変えない）
   const readable = (b: string) => b.replace(/^### /gm, "■ ").replace(/<\/?details>|<\/?summary>/g, "").replace(/\n---\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
@@ -459,81 +472,81 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
   const cards = rows.map((r) => {
     const id = `c${uid++}`;
     if (!r.key) {
-      return `<section class="card" data-name="${esc(r.repo.toLowerCase())}" data-f="stopped"><div class="head static"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><span class="badge off">停止中</span></div>
-<p class="note" style="padding-top:12px">このリポジトリは運営により停止されています。</p></section>`;
+      return `<section class="card" data-name="${esc(r.repo.toLowerCase())}" data-f="stopped"><div class="head static"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><span class="badge off">${t("停止中", "Suspended")}</span></div>
+<p class="note" style="padding-top:12px">${t("このリポジトリは運営により停止されています。", "This repository has been suspended by the operator.")}</p></section>`;
     }
     const tag = `<script src="${o.origin}/widget.js" data-key="${r.key}" async></script>`;
     const app = `${o.origin}/r/${r.key}`;
     const pend = r.pending ?? [];
-    const tabs: [string, string, string][] = [["setup", "導入", ""]];
+    const tabs: [string, string, string][] = [["setup", t("導入", "Setup"), ""]];
     if (r.canEdit) {
-      tabs.push(["pending", "承認待ち", `<span class="n${pend.length ? " hot" : ""}">${pend.length}</span>`]);
-      tabs.push(["settings", "設定", ""]);
+      tabs.push(["pending", t("承認待ち", "Pending"), `<span class="n${pend.length ? " hot" : ""}">${pend.length}</span>`]);
+      tabs.push(["settings", t("設定", "Settings"), ""]);
     }
     const first = r.canEdit && pend.length ? "pending" : "setup";
     const panel = (k: string, body: string) =>
       `<div class="panel" role="tabpanel" id="${id}-${k}" aria-labelledby="${id}-t-${k}"${k === first ? "" : " hidden"}>${body}</div>`;
     const setupPanel = panel("setup", `
-<div class="blk"><span class="lbl">プロジェクトキー</span><div class="row"><code class="key">${esc(r.key)}</code>${copyBtn(r.key, "キー")}</div></div>
-<div class="blk"><span class="lbl">サイトに貼る（&lt;/body&gt; の前）</span><div class="row"><code>${esc(tag)}</code>${copyBtn(tag, "script タグ")}</div></div>
-<div class="blk"><span class="lbl">アプリの WebView で開く URL</span><div class="row"><code>${esc(app)}</code>${copyBtn(app, "URL")}</div></div>
-<a class="more" href="${esc(app)}" target="_blank" rel="noopener">フォームを開いて確かめる ↗</a>`);
+<div class="blk"><span class="lbl">${t("プロジェクトキー", "Project key")}</span><div class="row"><code class="key">${esc(r.key)}</code>${copyBtn(r.key, t("キー", "key"))}</div></div>
+<div class="blk"><span class="lbl">${t("サイトに貼る（&lt;/body&gt; の前）", "Add to your site (before &lt;/body&gt;)")}</span><div class="row"><code>${esc(tag)}</code>${copyBtn(tag, t("script タグ", "script tag"))}</div></div>
+<div class="blk"><span class="lbl">${t("アプリの WebView で開く URL", "URL to open in an app WebView")}</span><div class="row"><code>${esc(app)}</code>${copyBtn(app, "URL")}</div></div>
+<a class="more" href="${esc(app)}" target="_blank" rel="noopener">${t("フォームを開いて確かめる ↗", "Open the form ↗")}</a>`);
     const pendingPanel = !r.canEdit ? "" : panel("pending", pend.length
       ? `<div class="list">${pend.map((x) => `<article class="item" data-id="${esc(x.id)}" data-repo="${esc(r.repo)}">
 <div class="it-top"><div class="it-main"><div class="it-title">${esc(x.title)}</div><div class="it-meta">${esc(fmt(x.createdAt))}</div></div></div>
 <p class="it-body">${esc(readable(x.body))}</p>
-<div class="it-act"><button type="button" class="btn" data-action="approve">起票する</button><button type="button" class="ghost" data-action="reject">捨てる</button>
-<button type="button" class="ghost toggle" data-more>全文を見る</button><span class="st" role="status" aria-live="polite"></span></div></article>`).join("")}</div>`
-      : `<div class="empty"><span class="ic" aria-hidden="true">📭</span>承認待ちの報告はありません。${r.approval ? "" : "<br>今は「すぐに起票」なので、報告はそのまま Issue になります。"}</div>`);
+<div class="it-act"><button type="button" class="btn" data-action="approve">${t("起票する", "Publish")}</button><button type="button" class="ghost" data-action="reject">${t("捨てる", "Discard")}</button>
+<button type="button" class="ghost toggle" data-more>${t("全文を見る", "Show all")}</button><span class="st" role="status" aria-live="polite"></span></div></article>`).join("")}</div>`
+      : `<div class="empty"><span class="ic" aria-hidden="true">📭</span>${t("承認待ちの報告はありません。", "No pending reports.")}${r.approval ? "" : `<br>${t("今は「すぐに起票」なので、報告はそのまま Issue になります。", "Reports are published immediately in this mode.")}`}</div>`);
     const settingsPanel = !r.canEdit ? "" : panel("settings", `<form class="set" data-repo="${esc(r.repo)}">
-<div class="blk"><span class="lbl" id="${id}-m">届いた報告の扱い</span>
+<div class="blk"><span class="lbl" id="${id}-m">${t("届いた報告の扱い", "When a report arrives")}</span>
 <div class="seg" role="radiogroup" aria-labelledby="${id}-m">
-<label><input type="radio" name="approval" value="1"${r.approval ? " checked" : ""}><span>承認してから起票</span></label>
-<label><input type="radio" name="approval" value="0"${r.approval ? "" : " checked"}><span>すぐに起票</span></label></div>
-<p class="hint">公開リポジトリでは「承認してから起票」がおすすめです。承認待ちは 14 日で自動的に消えます。</p></div>
-<div class="blk"><label class="lbl" for="${id}-o">埋め込みを許すサイト（1 行に 1 つ、最大 10）</label>
+<label><input type="radio" name="approval" value="1"${r.approval ? " checked" : ""}><span>${t("承認してから起票", "Review first")}</span></label>
+<label><input type="radio" name="approval" value="0"${r.approval ? "" : " checked"}><span>${t("すぐに起票", "Publish immediately")}</span></label></div>
+<p class="hint">${t("公開リポジトリでは「承認してから起票」がおすすめです。承認待ちは 14 日で自動的に消えます。", "Recommended for public repositories. Pending reports are deleted after 14 days.")}</p></div>
+<div class="blk"><label class="lbl" for="${id}-o">${t("埋め込みを許すサイト（1 行に 1 つ、最大 10）", "Allowed sites (one per line, up to 10)")}</label>
 <textarea id="${id}-o" name="origins" rows="3" placeholder="https://example.com" spellcheck="false">${esc(r.origins.join("\n"))}</textarea>
-<p class="hint">空にすると、どのサイトにも埋め込めます。アプリの WebView から開く場合は影響しません。</p></div>
-<div class="blk"><label class="lbl" for="${id}-l">1 日に受け付ける件数の上限（1〜1000）</label>
-<input id="${id}-l" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="既定 ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}"></div>
-<div class="save-row"><button type="submit" class="btn">保存</button><span class="st" role="status" aria-live="polite"></span></div></form>`);
+<p class="hint">${t("空にすると、どのサイトにも埋め込めます。アプリの WebView から開く場合は影響しません。", "Leave empty to allow any site. Opening the form in an app WebView is not affected.")}</p></div>
+<div class="blk"><label class="lbl" for="${id}-l">${t("1 日に受け付ける件数の上限（1〜1000）", "Daily limit (1–1000)")}</label>
+<input id="${id}-l" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="${t("既定", "Default")} ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}"></div>
+<div class="save-row"><button type="submit" class="btn">${t("保存", "Save")}</button><span class="st" role="status" aria-live="polite"></span></div></form>`);
     const open = openAll || pend.length > 0;
     const flags = [pend.length ? "pending" : "", r.approval ? "approval" : "instant"].filter(Boolean).join(" ");
     return `<section class="card" aria-label="${esc(r.repo)}" data-name="${esc(r.repo.toLowerCase())}" data-f="${flags}">
 <button type="button" class="head" aria-expanded="${open}" aria-controls="${id}-body"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
-${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? "承認モード" : "すぐに起票"}</span>` : ""}
-${pend.length ? `<span class="badge hot" data-pcount>承認待ち ${pend.length}</span>` : ""}<span class="chev" aria-hidden="true"></span></button>
+${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? t("承認モード", "Review first") : t("すぐに起票", "Instant")}</span>` : ""}
+${pend.length ? `<span class="badge hot" data-pcount>${t("承認待ち", "Pending")} ${pend.length}</span>` : ""}<span class="chev" aria-hidden="true"></span></button>
 <div class="body" id="${id}-body"${open ? "" : " hidden"}>
 <div class="tabs" role="tablist">${tabs.map(([k, label, extra]) =>
   `<button type="button" class="tab" role="tab" id="${id}-t-${k}" aria-controls="${id}-${k}" aria-selected="${k === first}" tabindex="${k === first ? 0 : -1}">${label}${extra}</button>`).join("")}</div>
 ${setupPanel}${pendingPanel}${settingsPanel}
-${r.canEdit ? "" : `<p class="note">設定の変更と承認は、このリポジトリの管理者だけができます。</p>`}</div></section>`;
+${r.canEdit ? "" : `<p class="note">${t("設定の変更と承認は、このリポジトリの管理者だけができます。", "Only repository admins can change settings and review reports.")}</p>`}</div></section>`;
   }).join("");
   const empty = `<section class="card"><div class="empty" style="padding:44px 20px"><span class="ic" aria-hidden="true">🧩</span>
-まだ PosIssue を入れたリポジトリがありません。<br><br><a class="btn" style="text-decoration:none;display:inline-block" href="${esc(install)}">GitHub App をインストール</a></div></section>`;
-  return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark"><meta name="robots" content="noindex"><title>管理画面 | PosIssue</title>
+${t("まだ PosIssue を入れたリポジトリがありません。", "You haven’t installed PosIssue on any repository yet.")}<br><br><a class="btn" style="text-decoration:none;display:inline-block" href="${esc(install)}">${t("GitHub App をインストール", "Install the GitHub App")}</a></div></section>`;
+  return `<!doctype html><html lang="${o.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><meta name="robots" content="noindex"><title>${t("管理画面", "Dashboard")} | PosIssue</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml"><style>${ADMIN_STYLE}</style></head><body>
-<header class="bar"><div class="in"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><span class="crumb">管理画面</span>
-<span class="sp"></span><a class="lk h" href="${esc(install)}">リポジトリを追加・変更</a><a class="lk" href="/">トップ</a></div></header>
+<header class="bar"><div class="in"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><span class="crumb">${t("管理画面", "Dashboard")}</span>
+<span class="sp"></span><a class="lk h" href="${esc(install)}">${t("リポジトリを追加・変更", "Manage repositories")}</a><a class="lk" href="/">${t("トップ", "Home")}</a></div></header>
 <main>
-${o.justInstalled ? `<div class="ok-banner" role="status">✅ インストールが完了しました。「導入」のコードをサイトに貼るだけで使えます。</div>` : ""}
-<div class="hero"><div><h1>管理画面</h1><p class="lead">GitHub で確認できた、あなたがアクセスできるリポジトリだけを表示しています。</p></div>
-<div class="stats"><div class="stat"><b>${o.rows.filter((r) => r.key).length}</b><span>リポジトリ</span></div>
-<div class="stat${totalPending ? " hot" : ""}"><b>${totalPending}</b><span>承認待ち</span></div></div></div>
-${rows.length > 3 ? `<div class="tools"><input type="search" id="q" placeholder="リポジトリを検索" aria-label="リポジトリを検索" autocomplete="off">
-<div class="chips" role="group" aria-label="絞り込み"><button type="button" class="chip" aria-pressed="true" data-f="">すべて</button><button type="button" class="chip" aria-pressed="false" data-f="pending">承認待ちあり</button><button type="button" class="chip" aria-pressed="false" data-f="approval">承認モード</button><button type="button" class="chip" aria-pressed="false" data-f="instant">すぐに起票</button></div>
-<button type="button" class="ghost toggle" id="all">すべて開く</button></div>
-<p class="none" id="none" hidden>条件に合うリポジトリはありません。</p>` : ""}
+${o.justInstalled ? `<div class="ok-banner" role="status">✅ ${t("インストールが完了しました。「導入」のコードをサイトに貼るだけで使えます。", "Installed! Paste the code from “Setup” into your site to start.")}</div>` : ""}
+<div class="hero"><div><h1>${t("管理画面", "Dashboard")}</h1><p class="lead">${t("GitHub で確認できた、あなたがアクセスできるリポジトリだけを表示しています。", "Only repositories you can access on GitHub are shown.")}</p></div>
+<div class="stats"><div class="stat"><b>${o.rows.filter((r) => r.key).length}</b><span>${t("リポジトリ", "Repositories")}</span></div>
+<div class="stat${totalPending ? " hot" : ""}"><b>${totalPending}</b><span>${t("承認待ち", "Pending")}</span></div></div></div>
+${rows.length > 3 ? `<div class="tools"><input type="search" id="q" placeholder="${t("リポジトリを検索", "Search repositories")}" aria-label="${t("リポジトリを検索", "Search repositories")}" autocomplete="off">
+<div class="chips" role="group" aria-label="${t("絞り込み", "Filter")}"><button type="button" class="chip" aria-pressed="true" data-f="">${t("すべて", "All")}</button><button type="button" class="chip" aria-pressed="false" data-f="pending">${t("承認待ちあり", "Has pending")}</button><button type="button" class="chip" aria-pressed="false" data-f="approval">${t("承認モード", "Review first")}</button><button type="button" class="chip" aria-pressed="false" data-f="instant">${t("すぐに起票", "Instant")}</button></div>
+<button type="button" class="ghost toggle" id="all">${t("すべて開く", "Expand all")}</button></div>
+<p class="none" id="none" hidden>${t("条件に合うリポジトリはありません。", "No repositories match.")}</p>` : ""}
 ${o.rows.length ? `<div id="cards">${cards}</div>` : empty}
-${o.rows.length ? `<div class="addcard"><span>別のリポジトリにも入れる・外す</span><a class="ghost" style="text-decoration:none" href="${esc(install)}">リポジトリを追加・変更</a></div>` : ""}
+${o.rows.length ? `<div class="addcard"><span>${t("別のリポジトリにも入れる・外す", "Add or remove repositories")}</span><a class="ghost" style="text-decoration:none" href="${esc(install)}">${t("リポジトリを追加・変更", "Manage repositories")}</a></div>` : ""}
 </main>
-<footer><a href="/changelog">リリースノート</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer>
+<footer><a href="${docPath(o.lang, "changelog")}">${t("リリースノート", "Changelog")}</a><a href="${docPath(o.lang, "privacy")}">${t("プライバシーポリシー", "Privacy")}</a><a href="${docPath(o.lang, "terms")}">${t("利用規約", "Terms")}</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer>
 <script nonce="${o.nonce}">
 (function(){
 var SESSION=${JSON.stringify(o.session)};
-var ERR={invalid_input:"入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。",session_expired:"時間が経ちました。ページを開き直してください。",
-forbidden:"このリポジトリは変更できません。",rate_limited:"少し待ってからもう一度お試しください。",not_found:"すでに処理されています。",upstream_error:"GitHub への起票に失敗しました。時間をおいてお試しください。"};
+var M=${JSON.stringify({collapse: t("たたむ", "Collapse"),more: t("全文を見る", "Show all"),copy: t("コピー", "Copy"),copied: t("コピー済み", "Copied"),copyFail: t("選択してコピー", "Select to copy"),expand: t("すべて開く", "Expand all"),collapseAll: t("すべて閉じる", "Collapse all"),saving: t("保存しています…", "Saving…"),saved: t("保存しました", "Saved"),saveFail: t("保存できませんでした。", "Could not save."),net: t("通信に失敗しました。", "Network error."),working: t("処理しています…", "Working…"),fail: t("処理できませんでした。", "Could not complete."),discarded: t("捨てました", "Discarded"),created: t(" を作成しました ↗", " created ↗"),pending: t("承認待ち", "Pending"),review: t("承認モード", "Review first"),instant: t("すぐに起票", "Instant"),invalid_input: t("入力を確かめてください（サイトは https://example.com の形、上限は 1〜1000）。", "Please check your input (sites like https://example.com, limit 1–1000)."),session_expired: t("時間が経ちました。ページを開き直してください。", "Session expired. Please reload the page."),forbidden: t("このリポジトリは変更できません。", "You can’t change this repository."),rate_limited: t("少し待ってからもう一度お試しください。", "Please wait a moment and try again."),not_found: t("すでに処理されています。", "Already handled."),upstream_error: t("GitHub への起票に失敗しました。時間をおいてお試しください。", "Could not create the issue on GitHub. Please try again later.")}).replace(/</g, "\\u003c")};
+var ERR=M;
 function call(path,body){return fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.assign({session:SESSION},body))}).then(function(r){return r.json()})}
 function say(st,cls,text){st.className="st"+(cls?" "+cls:"");st.textContent=text}
 // タブ（矢印キーでも移動できる）
@@ -544,8 +557,8 @@ if(j<0&&e.key!=="ArrowLeft")return;j=(j+tabs.length)%tabs.length;sel(tabs[j]);ta
 // 開閉
 function setOpen(h,on){h.setAttribute("aria-expanded",on);document.getElementById(h.getAttribute("aria-controls")).hidden=!on}
 document.querySelectorAll("button.head").forEach(function(h){h.addEventListener("click",function(){setOpen(h,h.getAttribute("aria-expanded")!=="true")})});
-var all=document.getElementById("all");if(all)all.addEventListener("click",function(){var open=all.textContent==="すべて開く";
-document.querySelectorAll(".card:not([hidden]) button.head").forEach(function(h){setOpen(h,open)});all.textContent=open?"すべて閉じる":"すべて開く"});
+var all=document.getElementById("all");if(all)all.addEventListener("click",function(){var open=all.textContent===M.expand;
+document.querySelectorAll(".card:not([hidden]) button.head").forEach(function(h){setOpen(h,open)});all.textContent=open?M.collapseAll:M.expand});
 // 検索と絞り込み
 var q=document.getElementById("q"),fl="";
 function apply(){var s=(q&&q.value||"").trim().toLowerCase(),n=0;document.querySelectorAll("#cards>.card").forEach(function(c){
@@ -556,29 +569,29 @@ document.querySelectorAll(".chip").forEach(function(b){b.addEventListener("click
 document.querySelectorAll(".chip").forEach(function(x){x.setAttribute("aria-pressed",x===b)});apply()})});
 // コピー
 document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener("click",function(){var s=b.querySelector("span");
-navigator.clipboard.writeText(b.dataset.copy).then(function(){b.classList.add("done");s.textContent="コピー済み";setTimeout(function(){b.classList.remove("done");s.textContent="コピー"},1600)},
-function(){s.textContent="選択してコピー"})})});
+navigator.clipboard.writeText(b.dataset.copy).then(function(){b.classList.add("done");s.textContent=M.copied;setTimeout(function(){b.classList.remove("done");s.textContent=M.copy},1600)},
+function(){s.textContent=M.copyFail})})});
 // 設定
 document.querySelectorAll("form.set").forEach(function(f){f.addEventListener("submit",function(e){e.preventDefault();
 var st=f.querySelector(".st"),btn=f.querySelector("[type=submit]"),lim=f.elements.limit.value.trim(),ap=f.querySelector("[name=approval]:checked").value==="1";
-var origins=f.elements.origins.value.split("\\n").map(function(x){return x.trim()}).filter(Boolean);btn.disabled=true;say(st,"","保存しています…");
+var origins=f.elements.origins.value.split("\\n").map(function(x){return x.trim()}).filter(Boolean);btn.disabled=true;say(st,"",M.saving);
 call("/api/settings",{repo:f.dataset.repo,allowedOrigins:origins,dailyLimit:lim?Number(lim):null,approval:ap}).then(function(r){
-if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\\n");say(st,"ok","保存しました");
-var b=f.closest(".card").querySelector("[data-mode]");if(b){b.textContent=r.approval?"承認モード":"すぐに起票";b.classList.toggle("ap",r.approval)}}
-else say(st,"err",ERR[r.error]||"保存できませんでした。")}).catch(function(){say(st,"err","通信に失敗しました。")}).finally(function(){btn.disabled=false})})});
+if(r.ok){f.elements.origins.value=r.allowedOrigins.join("\\n");say(st,"ok",M.saved);
+var b=f.closest(".card").querySelector("[data-mode]");if(b){b.textContent=r.approval?M.review:M.instant;b.classList.toggle("ap",r.approval)}}
+else say(st,"err",ERR[r.error]||M.saveFail)}).catch(function(){say(st,"err",M.net)}).finally(function(){btn.disabled=false})})});
 // 承認待ち
 var total=document.querySelector(".stat:nth-child(2) b");
 document.querySelectorAll(".item").forEach(function(it){var st=it.querySelector(".st"),bs=it.querySelectorAll("[data-action]");
-it.querySelector("[data-more]").addEventListener("click",function(e){var o=it.classList.toggle("open");e.target.textContent=o?"たたむ":"全文を見る"});
-bs.forEach(function(b){b.addEventListener("click",function(){bs.forEach(function(x){x.disabled=true});say(st,"","処理しています…");
+it.querySelector("[data-more]").addEventListener("click",function(e){var o=it.classList.toggle("open");e.target.textContent=o?M.collapse:M.more});
+bs.forEach(function(b){b.addEventListener("click",function(){bs.forEach(function(x){x.disabled=true});say(st,"",M.working);
 call("/api/pending",{repo:it.dataset.repo,id:it.dataset.id,action:b.dataset.action}).then(function(r){
-if(!r.ok){say(st,"err",ERR[r.error]||"処理できませんでした。");bs.forEach(function(x){x.disabled=false});return}
-st.className="st ok";st.textContent="";if(r.issueUrl){var a=document.createElement("a");a.href=r.issueUrl;a.target="_blank";a.rel="noopener";a.textContent="Issue #"+r.issueNumber+" を作成しました ↗";st.append(a)}else st.textContent="捨てました";
+if(!r.ok){say(st,"err",ERR[r.error]||M.fail);bs.forEach(function(x){x.disabled=false});return}
+st.className="st ok";st.textContent="";if(r.issueUrl){var a=document.createElement("a");a.href=r.issueUrl;a.target="_blank";a.rel="noopener";a.textContent="Issue #"+r.issueNumber+M.created;st.append(a)}else st.textContent=M.discarded;
 it.querySelector("[data-more]").remove();bs.forEach(function(x){x.remove()});it.style.opacity=".6";
 var card=it.closest(".card"),n=card.querySelector(".n");var c=Math.max(0,Number(n.textContent)-1);n.textContent=c;if(!c)n.classList.remove("hot");
-var pb=card.querySelector("[data-pcount]");if(pb){if(c)pb.textContent="承認待ち "+c;else{pb.remove();card.dataset.f=card.dataset.f.replace("pending","").trim()}}
+var pb=card.querySelector("[data-pcount]");if(pb){if(c)pb.textContent=M.pending+" "+c;else{pb.remove();card.dataset.f=card.dataset.f.replace("pending","").trim()}}
 if(total){var t=Math.max(0,Number(total.textContent)-1);total.textContent=t;if(!t)total.parentNode.classList.remove("hot")}})
-.catch(function(){say(st,"err","通信に失敗しました。");bs.forEach(function(x){x.disabled=false})})})})});
+.catch(function(){say(st,"err",M.net);bs.forEach(function(x){x.disabled=false})})})})});
 })();
 </script></body></html>`;
 }
