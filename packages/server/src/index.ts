@@ -146,11 +146,6 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
   };
 
   async function setup(req: Request, url: URL, env: Env) {
-    // 7.3: GitHub API を呼ぶので、連打で利用上限を使い切られないよう IP ごとに絞る
-    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
-    if (!(await env.RL_IP.limit({ key: `setup:${ip}` })).success) {
-      return html(messagePage("Too many requests", "<p>少し待ってからもう一度お試しください。</p>"), {}, 429);
-    }
     // OAuth の往復では installation_id を state で持ち回る
     const id = Number(url.searchParams.get("installation_id") ?? url.searchParams.get("state"));
     if (!Number.isInteger(id) || id <= 0) return html(messagePage("Error", "<p>installation_id がありません。</p>"), {}, 400);
@@ -161,6 +156,11 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
       auth.searchParams.set("state", String(id));
       return Response.redirect(auth.toString(), 302);
+    }
+    // 7.3: GitHub API を呼ぶのはここからなので、ここで IP ごとに絞る（認可画面へのリダイレクトは数えない）
+    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+    if (!(await env.RL_IP.limit({ key: `setup:${ip}` })).success) {
+      return html(messagePage("Too many requests", "<p>少し待ってからもう一度お試しください。</p>"), {}, 429);
     }
     let repos: string[] | null = null;
     try { repos = await userInstallationRepos(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, code, id); } catch (e) { console.log(String(e)); }
