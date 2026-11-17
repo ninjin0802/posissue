@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // PosIssue CLI（依存なし、Node 18+）。仕様: docs/spec/04-http-api.html 4.5
-//   npx github:ninjin0802/posissue keys          自分のリポジトリの projectKey を表示
-//   npx github:ninjin0802/posissue keys --json   JSON で出す（AI・スクリプト向け）
+//   npx posissue keys          自分のリポジトリの projectKey を表示
+//   npx posissue keys --json   JSON で出す（AI・スクリプト向け）
 // GitHub へのログインは、表示される URL とコードを使って「人が」ブラウザで行う。トークンはどこにも保存しない。
 const CLIENT_ID = "Iv23liLH0ndBpU6iA84X"; // 公開の値（GitHub App の Client ID）
 const args = process.argv.slice(2);

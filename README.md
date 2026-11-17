@@ -11,6 +11,7 @@
 
 [![Release](https://img.shields.io/github/v/release/ninjin0802/posissue?color=1f2328&label=release)](https://github.com/ninjin0802/posissue/releases)
 [![CI](https://github.com/ninjin0802/posissue/actions/workflows/ci.yml/badge.svg)](https://github.com/ninjin0802/posissue/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/posissue?color=cb3837&label=npm)](https://www.npmjs.com/package/posissue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-1f2328.svg)](LICENSE)
 ![Cloudflare Workers](https://img.shields.io/badge/runs%20on-Cloudflare%20Workers-f38020.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)
@@ -51,7 +52,7 @@
 ### 2. ウィジェットを置く
 
 <table>
-<tr><th>Web サイト</th><th>アプリ（iOS / Android / Flutter / Electron など）</th></tr>
+<tr><th>Web サイト</th><th>npm（React / Vue / Next.js など）</th></tr>
 <tr><td>
 
 ```html
@@ -63,15 +64,23 @@
 
 </td><td>
 
-```text
-https://posissue.2nj.lol/r/pk_xxx
-  ?lang=ja&app_version=1.2.0&os=ios
+```sh
+npm i posissue
 ```
 
-WebView かブラウザで開くだけです。
+```ts
+import { init } from "posissue";
+init({ projectKey: "pk_xxx", lang: "ja" });
+```
 
 </td></tr>
 </table>
+
+**アプリ（iOS / Android / Flutter / Electron など）** は、次の URL を WebView かブラウザで開くだけです。
+
+```text
+https://posissue.2nj.lol/r/pk_xxx?lang=ja&app_version=1.2.0&os=ios
+```
 
 `<script>` には `data-lang="ja|en"`、`data-position="bottom-right|bottom-left"`、`data-label="フィードバック"`、`data-kinds="bug,feature,other"` を付けられます。アプリの URL のクエリ（`lang`・`kinds` 以外）は、環境情報として Issue に載ります。
 
@@ -111,8 +120,8 @@ WebView かブラウザで開くだけです。
 ターミナルからもキーを確認できます（Node 18+）。表示された URL とコードで、ブラウザから GitHub にログインしてください。
 
 ```sh
-npx github:ninjin0802/posissue keys          # 一覧
-npx github:ninjin0802/posissue keys --json   # JSON（スクリプトや AI 向け）
+npx posissue keys          # 一覧
+npx posissue keys --json   # JSON（スクリプトや AI 向け）
 ```
 
 ## 🤖 AI に導入してもらう
@@ -126,6 +135,10 @@ https://posissue.2nj.lol/llms.txt を読んで、このプロジェクトに Pos
 AI はキーを取るときに CLI を実行し、表示された URL とコードをあなたに渡します。**GitHub へのログインは、あなた自身がブラウザで行います。** このリポジトリ自体を AI で開発するときのルールは [`AGENTS.md`](AGENTS.md) にあります。
 
 ## 📐 フォームを型で決める（セルフホスト）
+
+```sh
+npm i @posissue/server
+```
 
 フォームの項目は `FormTemplate` で決めます。書き間違えるとエディタが教えてくれて、起動時にもチェックされます。
 
@@ -166,12 +179,12 @@ export default createHandler({ forms });
 
 ```
 packages/
-  core/     @posissue/core    型・検証・Issue 本文の組み立て
-  server/   @posissue/server  Cloudflare Workers 用ハンドラ（フォーム・API・管理画面・OAuth）
-  widget/   posissue          ブラウザ用ウィジェット
+  core/     @posissue/core    型・検証・Issue 本文の組み立て（npm）
+  server/   @posissue/server  Cloudflare Workers 用ハンドラ（フォーム・API・管理画面・OAuth）（npm）
+  widget/   posissue          ブラウザ用ウィジェットと CLI（npm）
 apps/
   hosted/                     公式ホスト（wrangler 設定・D1 マイグレーション・静的ページ）
-cli/        posissue keys     キー確認用の CLI（依存なし）
+cli/        posissue keys     キー確認用の CLI（npm の posissue に同梱）
 docs/spec/                    仕様書（SSOT）
 ```
 
@@ -203,7 +216,6 @@ main には直接 push せず、ブランチ → PR → CI（型チェック・�
 
 - 厳しい CSP のサイトでは、`script-src` と `frame-src` に `https://posissue.2nj.lol` を追加してください。
 - まだ、報告した人への返信とスクリーンショットの添付はできません（[ロードマップ](docs/spec/10-roadmap.html)）。
-- npm パッケージは未公開です。今は `<script>` タグかアプリの URL で使ってください。
 
 ## 📝 リリースノート
 

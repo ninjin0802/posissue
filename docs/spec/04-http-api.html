@@ -51,7 +51,7 @@
 <li>返すのは、そのユーザーがアクセスできるリポジトリだけ（4.3 と同じ規則）。トークンは保存しない。IP ごとに回数を制限する。</li>
 <li>応答：<code>{ ok: true, endpoint, keys: [{ repo, key, stopped }] }</code>。失敗：401 unauthorized / 429 rate_limited / 502 upstream_error。</li>
 </ul>
-<p>CLI：<code>npx github:ninjin0802/posissue keys [--json] [--endpoint URL]</code>（リポジトリの <code>cli/posissue.mjs</code>、依存なし、Node 18+）。案内は標準エラー、結果は標準出力に出す。</p>
+<p>CLI：<code>npx posissue keys [--json] [--endpoint URL]</code>（リポジトリの <code>cli/posissue.mjs</code>、依存なし、Node 18+）。案内は標準エラー、結果は標準出力に出す。</p>
 <h2>4.6 POST /api/settings（作者の設定変更、v1.1）</h2>
 <p>キー確認画面（4.3）の「設定」から、リポジトリごとに次を変えられる。</p>
 <ul>

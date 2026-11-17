@@ -11,6 +11,7 @@ arrive in your open-source repository as GitHub issues.
 
 [![Release](https://img.shields.io/github/v/release/ninjin0802/posissue?color=1f2328&label=release)](https://github.com/ninjin0802/posissue/releases)
 [![CI](https://github.com/ninjin0802/posissue/actions/workflows/ci.yml/badge.svg)](https://github.com/ninjin0802/posissue/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/posissue?color=cb3837&label=npm)](https://www.npmjs.com/package/posissue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-1f2328.svg)](LICENSE)
 
 **[🌐 posissue.2nj.lol](https://posissue.2nj.lol/?lang=en)** · [Install the GitHub App](https://github.com/apps/posissue/installations/new) · [Dashboard](https://posissue.2nj.lol/admin) · [Changelog](https://posissue.2nj.lol/en/changelog) · [日本語](README.md)
@@ -39,6 +40,8 @@ arrive in your open-source repository as GitHub issues.
 <script src="https://posissue.2nj.lol/widget.js" data-key="pk_xxx" data-lang="en" async></script>
 ```
 
+   Or with npm: `npm i posissue` then `import { init } from "posissue"; init({ projectKey: "pk_xxx" });`
+
    In apps, open `https://posissue.2nj.lol/r/pk_xxx?lang=en&app_version=1.2.0&os=ios` in a WebView.
 
 3. Reports arrive as issues labeled `via-widget` (in approval mode, after you click “Publish” in the dashboard).
@@ -46,7 +49,7 @@ arrive in your open-source repository as GitHub issues.
 Find your keys any time at **[posissue.2nj.lol/admin](https://posissue.2nj.lol/admin)** or with the CLI (Node 18+):
 
 ```sh
-npx github:ninjin0802/posissue keys --json
+npx posissue keys --json
 ```
 
 The CLI prints a GitHub URL and a one-time code. **You sign in to GitHub yourself in the browser.**
@@ -59,6 +62,10 @@ Read https://posissue.2nj.lol/llms.txt and add the PosIssue feedback widget to t
 
 ## Self-hosting
 
+```sh
+npm i @posissue/server
+```
+
 ```ts
 import { createHandler, type FormTemplate } from "@posissue/server";
 export default createHandler({ forms: [/* FormTemplate[] */] });
@@ -70,7 +77,6 @@ See the spec (`docs/spec/`, Japanese) for deployment. The spec is the single sou
 
 - With a strict CSP, add `https://posissue.2nj.lol` to `script-src` and `frame-src`.
 - Replies to reporters and screenshot attachments are not supported yet.
-- The npm packages are not published yet.
 
 ## Author
 
