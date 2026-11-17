@@ -1,55 +1,170 @@
+<div align="center">
+
 # PosIssue
 
-GitHub アカウントがなくても、サイトやアプリから OSS リポジトリへバグ報告・要望を Issue として送れるウィジェットフレームワークです。Cloudflare Workers で動きます。
+**GitHub アカウントがなくても、だれでも Issue を送れる。**
 
-> 状態: v1 開発中（未リリース）
+サイトやアプリにウィジェットを 1 行置くだけで、利用者からのバグ報告や要望が<br>
+あなたの OSS リポジトリに GitHub Issue として届きます。
 
-## 使い方
+[![License: MIT](https://img.shields.io/badge/license-MIT-5b5bd6.svg)](LICENSE)
+![Cloudflare Workers](https://img.shields.io/badge/runs%20on-Cloudflare%20Workers-f38020.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)
+![Status](https://img.shields.io/badge/status-v1%20preview-8b8bf5.svg)
 
-**サイトに置く**
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/form-dark.png">
+  <img src="docs/images/form-light.png" alt="PosIssue の報告フォーム" width="380">
+</picture>
+
+</div>
+
+---
+
+## ✨ 特長
+
+| | |
+|---|---|
+| 🙋 **アカウント不要** | 報告する人は GitHub に登録しなくても送れます |
+| 🧩 **1 行で導入** | `<script>` を貼るか `init()` を呼ぶだけ。アプリなら WebView で URL を開くだけ |
+| 📐 **フォームは型で決まる** | `FormTemplate` を渡すと、画面・入力チェック・Issue 本文の形がそろって決まります |
+| 🛡️ **スパム対策が最初から** | Turnstile、ハニーポット、投稿数の制限、重複検出、@メンションの無効化 |
+| 🌗 **きれいなフォーム** | ライト/ダーク自動切替、日本語・英語対応、アクセシビリティに配慮 |
+| ☁️ **Cloudflare で完結** | Workers + D1 + Turnstile。無料枠から始められます |
+
+## 🚀 はじめかた
+
+### 1. GitHub App をインストール
+
+公式ホストの App をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。
+
+### 2. ウィジェットを置く
+
+<table>
+<tr><th>Web サイト</th><th>npm</th></tr>
+<tr><td>
+
 ```html
-<script src="https://<endpoint>/widget.js" data-key="pk_xxx" async></script>
+<script
+  src="https://<endpoint>/widget.js"
+  data-key="pk_xxx"
+  async></script>
 ```
 
-**npm から**
+</td><td>
+
 ```ts
 import { init } from "posissue";
-init({ projectKey: "pk_xxx", endpoint: "https://<endpoint>" });
-```
 
-**アプリから**: `https://<endpoint>/r/pk_xxx?app_version=1.2.0&os=ios` を WebView で開きます。
-
-**フォームを型で決める（セルフホスト）**
-```ts
-import { createHandler } from "@posissue/server";
-export default createHandler({
-  forms: [{ kind: "bug", label: { en: "Bug", ja: "バグ報告" },
-    fields: [{ id: "steps", type: "textarea", required: true, label: { en: "Steps", ja: "再現手順" } }] }],
+init({
+  projectKey: "pk_xxx",
+  meta: { appVersion: "1.2.0" },
 });
 ```
 
-厳しい CSP のサイトでは `script-src` と `frame-src` に `<endpoint>` を追加してください。
+</td></tr>
+</table>
 
-## 構成
+**アプリ（iOS / Android / Flutter / Electron など）** は、次の URL を WebView で開くだけです。
 
-| パス | 内容 |
-|---|---|
-| `packages/core` | 型・検証・Issue 本文の組み立て |
-| `packages/server` | Cloudflare Workers 用ハンドラ |
-| `packages/widget` | ブラウザ用ウィジェット |
-| `apps/hosted` | 公式ホスト |
-| `docs/spec/` | 仕様書（SSOT）。`docs/spec/index.html` をブラウザで開く |
+```
+https://<endpoint>/r/pk_xxx?app_version=1.2.0&os=ios
+```
 
-## 開発
+### 3. Issue が届く
+
+送られた報告は `via-widget` ラベル付きの Issue になります。
+
+```markdown
+[Bug] 保存ボタンを押しても反応しない
+
+### Steps to reproduce
+1. 設定を開く
+2. 保存を押す
+
+### What happened
+何も起きない
+
+<details><summary>Environment</summary> page / userAgent / appVersion ... </details>
+```
+
+## 📐 フォームを型で決める
+
+フォームの項目は `FormTemplate` で決めます。書き間違えるとエディタが教えてくれて、起動時にもチェックされます。
+
+```ts
+import { createHandler, type FormTemplate } from "@posissue/server";
+
+const forms: FormTemplate[] = [
+  {
+    kind: "bug",
+    label: { en: "Bug", ja: "バグ報告" },
+    fields: [
+      { id: "steps", type: "textarea", required: true, label: { en: "Steps", ja: "再現手順" } },
+      { id: "severity", type: "select", label: { en: "Severity", ja: "深刻度" },
+        options: [{ value: "low", label: "Low" }, { value: "high", label: "High" }] },
+    ],
+  },
+];
+
+export default createHandler({ forms });
+```
+
+使える項目の種類は `text` / `textarea` / `select` / `checkbox` です。
+
+## 🛡️ スパム対策
+
+安い検査から順に行い、どれかに引っかかった時点で止めます。
+
+```
+入力チェック → ハニーポット → 送信速度 → URL の数 → プロジェクト確認
+  → 埋め込み元 → IP ごとの制限 → Turnstile → 1 日の上限 → 重複検出 → Issue 作成
+```
+
+本文の `@メンション` と `#123` は無効にしてから Issue にするので、通知を悪用されません。
+
+## 🏗️ 構成
+
+```
+packages/
+  core/     @posissue/core    型・検証・Issue 本文の組み立て
+  server/   @posissue/server  Cloudflare Workers 用ハンドラ
+  widget/   posissue          ブラウザ用ウィジェット
+apps/
+  hosted/                     公式ホスト
+docs/spec/                    仕様書（SSOT）
+```
+
+```mermaid
+flowchart LR
+  A[Web / アプリ] -->|フォーム| W[Cloudflare Worker]
+  W --> T[Turnstile]
+  W --> D[(D1)]
+  W -->|GitHub App| G[GitHub Issues]
+```
+
+## 📖 仕様書
+
+[`docs/spec/`](docs/spec/index.html) が唯一の正（SSOT）です。実装を変えるときは先に仕様書を更新します。リポジトリを clone して `docs/spec/index.html` をブラウザで開くと、章ごとのサイドメニュー付きで読めます。
+
+## 🧑‍💻 開発
 
 ```sh
 npm install
-npm test
-npm run typecheck
+npm test            # vitest
+npm run typecheck   # tsc
+cd apps/hosted && npx wrangler dev
 ```
 
-デプロイ手順は仕様書 9 章を参照してください。
+セルフホストの手順は仕様書の 9 章を見てください。
 
-## License
+## ⚠️ 注意
 
-MIT
+- 厳しい CSP のサイトでは、`script-src` と `frame-src` に `<endpoint>` を追加してください。
+- v1 では、報告した人への返信、スクリーンショットの添付、管理画面はまだありません（[ロードマップ](docs/spec/10-roadmap.html)）。
+
+## 📄 ライセンス
+
+[MIT](LICENSE)
