@@ -264,7 +264,7 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <meta name="color-scheme" content="light dark"><title>${t("PosIssue — GitHub アカウントなしで Issue を送れるウィジェット", "PosIssue — Let anyone file GitHub issues, no account needed")}</title>
 <meta name="description" content="${t(DESC_JA, DESC_EN)}">
 <link rel="alternate" hreflang="ja" href="${esc(o.origin)}/?lang=ja"><link rel="alternate" hreflang="en" href="${esc(o.origin)}/?lang=en">
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
 <meta property="og:type" content="website"><meta property="og:site_name" content="PosIssue">
 <meta property="og:url" content="${esc(o.origin)}/">
 <meta property="og:title" content="${t("PosIssue — アカウントがなくても、だれでも Issue を。", "PosIssue — No account? Anyone can file an issue.")}">
@@ -272,13 +272,13 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <meta property="og:image" content="${esc(o.origin)}/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="PosIssue">
 <meta name="twitter:card" content="summary_large_image"><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly docs"><style>${LANDING_STYLE}</style></head><body>
-<nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
+<nav><div class="w"><a class="logo" href="/"><img src="/icon.svg?v=2" alt="" width="28" height="28">PosIssue</a><div class="links">
 <a class="h" href="#features">${t("特長", "Features")}</a><a class="h" href="#start">${t("はじめかた", "Get started")}</a><a class="h" href="${docPath(o.lang, "changelog")}">${t("リリースノート", "Changelog")}</a><a class="h" href="#author">${t("作った人", "Author")}</a><span class="sep" aria-hidden="true"></span>
 <a class="lang" href="/?lang=${other}" hreflang="${other}" lang="${other}" title="${other === "en" ? "English" : "日本語"}">${other === "en" ? "EN" : "日本語"}</a>
 <a class="ib" href="/admin" aria-label="${t("管理画面", "Dashboard")}" title="${t("管理画面", "Dashboard")}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
 <a class="ib" href="${esc(o.repoUrl)}" aria-label="GitHub" title="GitHub">${GH_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</a></div></div></nav>
 <header class="hero"><div class="w"><div>
-<img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(13,17,23,.35))"><span class="pill">${t("OSS のための報告ウィジェット", "A feedback widget for open source")}</span>
+<img src="/icon.svg?v=2" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(13,17,23,.35))"><span class="pill">${t("OSS のための報告ウィジェット", "A feedback widget for open source")}</span>
 <h1>${t("<span>アカウントがなくても、</span><br><em>だれでも Issue を。</em>", "<span>No account needed.</span><br><em>Anyone can file an issue.</em>")}</h1>
 <p class="lead">${t("サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。", "Add one line to your site or app. Bug reports and feature requests from your users arrive in your repository as GitHub issues.")}</p>
 <div class="cta"><a class="btn p" href="${esc(install)}">${t("GitHub App をインストール →", "Install the GitHub App →")}</a><a class="btn" href="/admin">${t("管理画面", "Dashboard")}</a><a class="btn" href="${esc(o.repoUrl)}">${t("ソースを見る", "View source")}</a></div>
@@ -526,8 +526,8 @@ ${r.canEdit ? "" : `<p class="note">${t("設定の変更と承認は、このリ
 ${t("まだ PosIssue を入れたリポジトリがありません。", "You haven’t installed PosIssue on any repository yet.")}<br><br><a class="btn" style="text-decoration:none;display:inline-block" href="${esc(install)}">${t("GitHub App をインストール", "Install the GitHub App")}</a></div></section>`;
   return `<!doctype html><html lang="${o.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark"><meta name="robots" content="noindex"><title>${t("管理画面", "Dashboard")} | PosIssue</title>
-<link rel="icon" href="/icon.svg" type="image/svg+xml"><style>${ADMIN_STYLE}</style></head><body>
-<header class="bar"><div class="in"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><span class="crumb">${t("管理画面", "Dashboard")}</span>
+<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml"><style>${ADMIN_STYLE}</style></head><body>
+<header class="bar"><div class="in"><a class="logo" href="/"><img src="/icon.svg?v=2" alt="" width="28" height="28">PosIssue</a><span class="crumb">${t("管理画面", "Dashboard")}</span>
 <span class="sp"></span><a class="lk h" href="${esc(install)}">${t("リポジトリを追加・変更", "Manage repositories")}</a><a class="lk" href="/">${t("トップ", "Home")}</a></div></header>
 <main>
 ${o.justInstalled ? `<div class="ok-banner" role="status">✅ ${t("インストールが完了しました。「導入」のコードをサイトに貼るだけで使えます。", "Installed! Paste the code from “Setup” into your site to start.")}</div>` : ""}
