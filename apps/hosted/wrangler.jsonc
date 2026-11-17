@@ -2,6 +2,8 @@
   "name": "posissue",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
+  // /og.png など静的ファイル。Worker より先に配信される
+  "assets": { "directory": "./public" },
   "routes": [{ "pattern": "posissue.2nj.lol", "custom_domain": true }],
   "d1_databases": [{ "binding": "DB", "database_name": "posissue", "database_id": "eb9153ed-c265-475a-ab92-82e9865edbb5", "migrations_dir": "migrations" }],
   // 7.1 #7: IP ごと 1 分に 2 件

@@ -235,7 +235,14 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
   return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark"><title>PosIssue — GitHub アカウントなしで Issue を送れるウィジェット</title>
 <meta name="description" content="サイトやアプリに 1 行置くだけ。利用者のバグ報告や要望が、あなたの OSS リポジトリに GitHub Issue として届きます。">
-<link rel="icon" href="/icon.svg" type="image/svg+xml"><meta property="og:image" content="${esc(o.origin)}/icon.svg"><style>${LANDING_STYLE}</style></head><body>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<meta property="og:type" content="website"><meta property="og:site_name" content="PosIssue">
+<meta property="og:url" content="${esc(o.origin)}/">
+<meta property="og:title" content="PosIssue — アカウントがなくても、だれでも Issue を。">
+<meta property="og:description" content="サイトやアプリに 1 行置くだけ。利用者のバグ報告や要望が、あなたの OSS リポジトリに GitHub Issue として届きます。">
+<meta property="og:image" content="${esc(o.origin)}/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="PosIssue — アカウントがなくても、だれでも Issue を。">
+<meta name="twitter:card" content="summary_large_image"><style>${LANDING_STYLE}</style></head><body>
 <nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
 <a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
 <header class="hero"><div class="w"><div>
