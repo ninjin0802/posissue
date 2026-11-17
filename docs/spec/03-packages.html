@@ -56,7 +56,8 @@ export const DEFAULT_FORMS: FormTemplate[]; // bug: 再現手順/期待/実際�
 <ul>
 <li>型の誤り（kind の重複、id の重複・不正、options のない select）は <code>createHandler</code> の起動時に例外にする（MUST）。</li>
 <li>サーバーは型にない項目、必須の空欄、選択肢にない値を <code>invalid_input</code> で拒否する（MUST）。</li>
-<li>v1 の公式ホストは <code>DEFAULT_FORMS</code> 固定。独自の型はセルフホストで使う（10章）。</li>
+<li>公式ホストでも、作者は管理画面の「フォーム」タブから型を JSON で設定できる（4.8、v1.5）。設定がなければ <code>DEFAULT_FORMS</code>（セルフホストでは <code>createHandler({ forms })</code>）を使う。</li>
+<li>作者が送る型は信頼できない入力として <code>parseFormsInput()</code> で検証し、知らないプロパティは捨て、長さ・個数に上限を設ける（種別 3、項目 15、選択肢 30 など）。</li>
 </ul>
 <h2>3.3 ウィジェット（posissue）</h2>
 <pre><code>import { init } from "posissue";
@@ -65,12 +66,21 @@ init({
   projectKey: "pk_xxx",
   endpoint?: "https://posissue.example",   // 省略時は公式ホスト
   kinds?: ["bug", "feature", "other"],     // 表示する種別
-  position?: "bottom-right" | "bottom-left",
+  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left",
+  offset?: number | { x?: number; y?: number }, // 端からの距離 px（既定 20）
+  button?: boolean,                        // false で浮いたボタンを出さない（open() で開く）
+  variant?: "pill" | "icon",               // 文字付き（既定）／丸いアイコンだけ
+  color?: "#rrggbb",                       // ボタンとフォームのアクセント色
+  zIndex?: number,
+  prefill?: { kind?, title?, fields?: { [id]: string } }, // 入力の先埋め
+  onSubmit?: (r: { kind?, issueNumber?, issueUrl?, pending? }) => void,
+  onClose?: () => void,
   label?: "フィードバック",                  // ボタンの文言
   lang?: "ja" | "en",                      // フォームの言語。省略時はブラウザの言語
   meta?: { appVersion: "1.2.0" },          // Issue に付ける追加情報
-}): { open(): void; close(): void; destroy(): void };</code></pre>
-<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。<code>data-position</code>、<code>data-label</code>、<code>data-lang</code> も使える。</p>
+}): { open(options?: { prefill? }): void; close(): void; destroy(): void };
+// script タグ版は window に CustomEvent "posissue:submit"（detail は onSubmit と同じ）を出す</code></pre>
+<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。すべての設定に <code>data-</code> 属性がある（<code>data-position</code>・<code>data-offset="x,y"</code>・<code>data-button="false"</code>・<code>data-variant</code>・<code>data-color</code>・<code>data-label</code>・<code>data-lang</code>・<code>data-kinds</code>・<code>data-z-index</code>）。script タグ版は <code>window.PosIssue</code> に open / close / destroy を置く。<code>color</code> は 6 桁の 16 進だけを受け付け、不正なら既定色にする。</p>
 <h2>3.4 サーバー（@posissue/server）</h2>
 <pre><code>import { createHandler } from "@posissue/server";
 

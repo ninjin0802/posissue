@@ -82,7 +82,21 @@ init({ projectKey: "pk_xxx", lang: "ja" });
 https://posissue.2nj.lol/r/pk_xxx?lang=ja&app_version=1.2.0&os=ios
 ```
 
-`<script>` には `data-lang="ja|en"`、`data-position="bottom-right|bottom-left"`、`data-label="フィードバック"`、`data-kinds="bug,feature,other"` を付けられます。アプリの URL のクエリ（`lang`・`kinds` 以外）は、環境情報として Issue に載ります。
+ボタンの位置や見た目は、オプションで自由に変えられます（`<script>` では `data-` 付きの属性、npm では同じ名前の設定）。
+
+| オプション | 例 | 中身 |
+|---|---|---|
+| `position` | `top-left` | 4 隅のどこに置くか（既定 `bottom-right`） |
+| `offset` | `24,80` / `{ x: 24, y: 80 }` | 端からの距離（px、既定 20） |
+| `button` | `false` | 浮いたボタンを出さない。自前のボタンから `open()`（`<script>` なら `window.PosIssue.open()`）で開く |
+| `variant` | `icon` | 文字付きのボタン（既定）か、丸いアイコンだけのボタンか |
+| `color` | `#e91e63` | ボタンとフォームのアクセント色 |
+| `label` | `ご意見` | ボタンの文字 |
+| `lang` / `kinds` / `zIndex` | `en` / `bug,feature` / `1000` | 言語・出す種別・重なり順 |
+| `prefill`（npm） | `{ title: "保存で落ちる", fields: { steps: "..." } }` | 入力の先埋め。`open({ prefill })` で開くたびに変えられる |
+| `onSubmit` / `onClose`（npm） | `(r) => toast("ありがとう")` | 送信後・閉じたときの処理。script タグ版は `window` の `posissue:submit` イベント |
+
+アプリの URL では `lang`・`kinds`・`color`・`prefill`（JSON）を指定でき、それ以外のクエリは環境情報として Issue に載ります。
 
 ### 3. Issue が届く
 
@@ -114,6 +128,7 @@ https://posissue.2nj.lol/r/pk_xxx?lang=ja&app_version=1.2.0&os=ios
 | 導入 | プロジェクトキー、サイトに貼るコード、アプリ用の URL をコピー |
 | 承認待ち | 届いた報告を 1 件ずつ「起票する」「捨てる」（14 日で自動削除） |
 | 設定 | 届いた報告の扱い（承認してから起票 / すぐに起票）、埋め込みを許すサイト（最大 10）、1 日の上限（1〜1000） |
+| フォーム | 報告フォームの種別と項目を JSON（`FormTemplate`）で自由に決める。標準に戻すこともできる |
 
 設定と承認ができるのは、そのリポジトリの管理者（admin / maintain）だけです。左の一覧は、検索と絞り込み（承認待ち・承認モード・すぐに起票）ができ、承認待ちの多い順に並びます。
 
@@ -160,7 +175,7 @@ const forms: FormTemplate[] = [
 export default createHandler({ forms });
 ```
 
-使える項目の種類は `text` / `textarea` / `select` / `checkbox` です。公式ホストでは標準の型（バグ報告・機能の要望・その他）を使います。セルフホストの手順は[仕様書の 9 章](docs/spec/09-operations.html)を見てください。
+使える項目の種類は `text` / `textarea` / `select` / `checkbox` です。**公式ホストでも、管理画面の「フォーム」タブに同じ形の JSON を貼れば、自分のフォームにできます。**セルフホストの手順は[仕様書の 9 章](docs/spec/09-operations.html)を見てください。
 
 ## 🛡️ スパム対策と安全性
 

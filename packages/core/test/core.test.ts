@@ -62,3 +62,26 @@ describe("buildIssue", () => {
     expect(neutralize("mail a@b")).toBe("mail a@​b");
   });
 });
+
+import { parseFormsInput } from "../src";
+describe("parseFormsInput", () => {
+  it("accepts a valid template and drops unknown properties", () => {
+    const r = parseFormsInput([{ kind: "bug", label: { en: "Bug", ja: "バグ" }, evil: "<x>", fields: [
+      { id: "steps", type: "textarea", required: true, label: "Steps", onclick: "x" },
+      { id: "sev", type: "select", label: "Severity", options: [{ value: "low", label: "Low" }] },
+    ] }]);
+    expect(r).toEqual([{ kind: "bug", label: { en: "Bug", ja: "バグ" }, fields: [
+      { id: "steps", type: "textarea", label: "Steps", required: true },
+      { id: "sev", type: "select", label: "Severity", options: [{ value: "low", label: "Low" }] },
+    ] }]);
+  });
+  it("rejects broken or oversized input with a message", () => {
+    for (const bad of [null, [], [{ kind: "spam", label: "x", fields: [] }], [{ kind: "bug", label: "", fields: [] }],
+      [{ kind: "bug", label: "B", fields: [{ id: "a b", type: "text", label: "x" }] }],
+      [{ kind: "bug", label: "B", fields: [{ id: "s", type: "select", label: "x" }] }],
+      [{ kind: "bug", label: "B", fields: Array(16).fill({ id: "a", type: "text", label: "x" }) }],
+      [{ kind: "bug", label: "B", fields: [] }, { kind: "bug", label: "B", fields: [] }]]) {
+      expect(typeof parseFormsInput(bad)).toBe("string");
+    }
+  });
+});

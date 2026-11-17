@@ -1,6 +1,6 @@
 // 仕様: docs/spec/04-http-api.html, 05-data-model.html, 07-spam-security.html
 import {
-  assertForms, buildIssue, DEFAULT_FORMS, parseReportRequest, reportUrls,
+  assertForms, buildIssue, DEFAULT_FORMS, parseFormsInput, parseReportRequest, reportUrls,
   type ErrorCode, type FormTemplate, type ReportResponse,
 } from "@posissue/core";
 import { mount } from "posissue"; // ウィジェット本体。/widget.js として配信する（先に npm run build -w posissue が必要）
@@ -40,7 +40,7 @@ export interface ServerConfig {
   maxUrls?: number;
 }
 
-interface Project { key: string; installation_id: number; repo: string; allowed_origins: string; daily_limit: number | null; active: number; approval: number }
+interface Project { key: string; installation_id: number; repo: string; allowed_origins: string; daily_limit: number | null; active: number; approval: number; forms: string | null }
 
 const PENDING_TTL_SEC = 14 * 86400;
 
@@ -54,8 +54,11 @@ const STATUS: Record<ErrorCode, number> = {
 const WIDGET_JS =
   // wrangler(esbuild) の keepNames が関数本体に __name(...) を差し込むので、toString した先でも動くよう同名の素通し関数を置く
   `(function(){var __name=function(f){return f};var s=document.currentScript;if(!s)return;var mount=${mount.toString()};` +
-  `var go=function(){mount({projectKey:s.dataset.key,endpoint:new URL(s.src).origin,position:s.dataset.position,label:s.dataset.label,lang:s.dataset.lang,` +
-  `kinds:s.dataset.kinds?s.dataset.kinds.split(","):undefined})};document.body?go():addEventListener("DOMContentLoaded",go)})();`;
+  // data-* 属性から設定を読む。window.PosIssue.open() で自前のボタンからも開ける
+  `var d=s.dataset,n=function(v){return v===undefined||v===""?undefined:Number(v)},o=(d.offset||"").split(",");` +
+  `var go=function(){window.PosIssue=mount({projectKey:d.key,endpoint:new URL(s.src).origin,position:d.position,label:d.label,lang:d.lang,` +
+  `kinds:d.kinds?d.kinds.split(","):undefined,button:d.button!=="false",variant:d.variant,color:d.color,zIndex:n(d.zIndex),` +
+  `offset:o.length>1?{x:n(o[0]),y:n(o[1])}:n(o[0])})};document.body?go():addEventListener("DOMContentLoaded",go)})();`;
 
 // スクリプトのない案内ページ用の既定 CSP。フォームとトップページは自分の CSP で上書きする
 const STATIC_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'";
@@ -81,6 +84,24 @@ function pickLang(req: Request, url: URL): Lang {
 }
 const langCookie = (lang: Lang) => `pi_lang=${lang}; Path=/; Max-Age=31536000; Secure; SameSite=Lax`;
 
+/** prefill の JSON を、決まった形・長さに絞って返す（不正なら捨てる） */
+function safePrefill(v: string): string | undefined {
+  if (v.length > 6000) return undefined;
+  try {
+    const o = JSON.parse(v) as Record<string, unknown>;
+    const out: { kind?: string; title?: string; fields?: Record<string, string> } = {};
+    if (typeof o.kind === "string" && /^(bug|feature|other)$/.test(o.kind)) out.kind = o.kind;
+    if (typeof o.title === "string") out.title = o.title.slice(0, 100);
+    if (o.fields && typeof o.fields === "object" && !Array.isArray(o.fields)) {
+      out.fields = {};
+      for (const [k, val] of Object.entries(o.fields as Record<string, unknown>).slice(0, 15)) {
+        if (/^[A-Za-z0-9_-]{1,32}$/.test(k) && typeof val === "string") out.fields[k] = val.slice(0, 5000);
+      }
+    }
+    return JSON.stringify(out);
+  } catch { return undefined; }
+}
+
 const splitOrigins = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 const origins = (p: Project) => splitOrigins(p.allowed_origins);
 
@@ -91,6 +112,11 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
   const maxUrls = config.maxUrls ?? 2;
   const perDay = config.limits?.projectPerDay ?? 50;
 
+  /** 作者が管理画面で決めたフォームの型。壊れていたら標準の型を使う */
+  const projectForms = (p: Pick<Project, "forms">): FormTemplate[] => {
+    if (!p.forms) return forms;
+    try { const f = parseFormsInput(JSON.parse(p.forms)); return typeof f === "string" ? forms : f; } catch { return forms; }
+  };
   const getProject = (env: Env, key: string) =>
     env.DB.prepare("SELECT * FROM projects WHERE key = ? AND active = 1 AND banned = 0").bind(key).first<Project>();
 
@@ -106,15 +132,18 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY) return fail("invalid_input");
     const text = await req.text();
     if (text.length > MAX_BODY) return fail("invalid_input");
-    let json: unknown = null;
+    let json: Record<string, unknown> | null = null;
     try { json = JSON.parse(text); } catch { /* 下で invalid_input */ }
-    const r = parseReportRequest(json, forms);
-    if (!r) return fail("invalid_input");
-    if (r.hp) return fail("spam", r.projectKey);
-    if (r.elapsedMs < minElapsed) return fail("spam", r.projectKey);
-    if (reportUrls(r) > maxUrls) return fail("spam", r.projectKey);
-    const p = await getProject(env, r.projectKey);
-    if (!p) return fail("unknown_project", r.projectKey);
+    // フォームの型はプロジェクトごとに違うので、キーの形を確かめてからプロジェクトを読む
+    if (!json || typeof json !== "object" || typeof json.projectKey !== "string" || !/^pk_[A-Za-z0-9]{24}$/.test(json.projectKey)) return fail("invalid_input");
+    if (json.hp) return fail("spam", json.projectKey);
+    if (typeof json.elapsedMs === "number" && json.elapsedMs < minElapsed) return fail("spam", json.projectKey);
+    const p = await getProject(env, json.projectKey);
+    if (!p) return fail("unknown_project", json.projectKey);
+    const pf = projectForms(p);
+    const r = parseReportRequest(json, pf);
+    if (!r) return fail("invalid_input", p.key);
+    if (reportUrls(r) > maxUrls) return fail("spam", p.key);
     const origin = req.headers.get("origin");
     const self = new URL(req.url).origin;
     const allowed = origins(p);
@@ -145,7 +174,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       .bind(hash, now).run();
     if (!fresh.meta.changes) return fail("duplicate", p.key);
 
-    const built = buildIssue(r, forms, config.labels);
+    const built = buildIssue(r, pf, config.labels);
     if (p.approval) {
       // 承認モード（4.7）：起票せずに保存し、作者の承認を待つ
       await env.DB.prepare("DELETE FROM pending WHERE created_at < ?").bind(now - PENDING_TTL_SEC).run();
@@ -221,7 +250,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     }
     const nonce = crypto.randomUUID().replace(/-/g, "");
     const session = await signSession(env.SESSION_SECRET, rows.filter((r) => r.key && r.canEdit).map((r) => [r.repo, r.installationId!]));
-    return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, session, defaultDailyLimit: perDay, justInstalled: target !== "keys", lang: pickLang(req, url) }), {
+    return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, session, defaultDailyLimit: perDay, justInstalled: target !== "keys", lang: pickLang(req, url), defaultForms: forms }), {
       "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; connect-src 'self'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`,
       "cache-control": "no-store",
       "set-cookie": "pi_state=; Path=/setup; Max-Age=0; HttpOnly; Secure; SameSite=Lax", // 使い捨て
@@ -279,6 +308,32 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     return json({ ok: true, allowedOrigins: allowed, dailyLimit: limit, approval: b.approval });
   }
 
+  /** 4.8: 作者がフォームの型を変える（null で標準に戻す）。認可は設定と同じ署名付きトークン */
+  async function apiForms(req: Request, env: Env): Promise<Response> {
+    const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
+    if (req.headers.get("origin") !== new URL(req.url).origin) return json({ ok: false, error: "forbidden" }, 403);
+    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+    if (!(await env.RL_ADMIN.limit({ key: `forms:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
+    const text = await req.text();
+    if (text.length > 30_000) return json({ ok: false, error: "invalid_input", message: "too large" }, 400);
+    let b: { session?: unknown; repo?: unknown; forms?: unknown };
+    try { b = JSON.parse(text); } catch { return json({ ok: false, error: "invalid_input" }, 400); }
+    const grants = await verifySession(env.SESSION_SECRET, b.session);
+    if (!grants) return json({ ok: false, error: "session_expired" }, 401);
+    const grant = grants.find(([repo]) => repo === b.repo);
+    if (!grant) return json({ ok: false, error: "forbidden" }, 403);
+    let stored: string | null = null;
+    if (b.forms !== null) {
+      const f = parseFormsInput(b.forms);
+      if (typeof f === "string") return json({ ok: false, error: "invalid_forms", message: f }, 400);
+      stored = JSON.stringify(f);
+    }
+    const r = await env.DB.prepare("UPDATE projects SET forms = ? WHERE repo = ? AND installation_id = ? AND active = 1 AND banned = 0")
+      .bind(stored, grant[0], grant[1]).run();
+    if (!r.meta.changes) return json({ ok: false, error: "forbidden" }, 403);
+    return json({ ok: true, forms: stored ? JSON.parse(stored) : null });
+  }
+
   /** 4.7: 承認待ちの報告を起票する・捨てる。認可は設定と同じ署名付きトークン。 */
   async function apiPending(req: Request, env: Env): Promise<Response> {
     const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
@@ -332,8 +387,8 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
 
   /** 7.4: 有効なキーがあれば再利用、停止中なら新しいキーに置き換える。運営が止めたものは復活させない。 */
   async function ensureProject(env: Env, id: number, repo: string, isPrivate: boolean): Promise<KeyRow> {
-    const cur = await env.DB.prepare("SELECT key, active, banned, allowed_origins, daily_limit, approval FROM projects WHERE repo = ?").bind(repo)
-      .first<{ key: string; active: number; banned: number; allowed_origins: string; daily_limit: number | null; approval: number }>();
+    const cur = await env.DB.prepare("SELECT key, active, banned, allowed_origins, daily_limit, approval, forms FROM projects WHERE repo = ?").bind(repo)
+      .first<{ key: string; active: number; banned: number; allowed_origins: string; daily_limit: number | null; approval: number; forms: string | null }>();
     if (cur?.banned) return { repo, key: null, origins: [], dailyLimit: null, approval: false };
     if (!cur || !cur.active) {
       const key = newKey();
@@ -341,10 +396,10 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
         // 4.7: 新規は公開リポジトリなら承認モード、非公開なら即時起票。再有効化では作者が選んだ値を残す
         "INSERT INTO projects (key, installation_id, repo, approval) VALUES (?, ?, ?, ?) ON CONFLICT (repo) DO UPDATE SET key = excluded.key, installation_id = excluded.installation_id, active = 1",
       ).bind(key, id, repo, isPrivate ? 0 : 1).run();
-      return { repo, key, origins: cur ? splitOrigins(cur.allowed_origins) : [], dailyLimit: cur?.daily_limit ?? null, approval: cur ? !!cur.approval : !isPrivate };
+      return { repo, key, origins: cur ? splitOrigins(cur.allowed_origins) : [], dailyLimit: cur?.daily_limit ?? null, approval: cur ? !!cur.approval : !isPrivate, forms: cur?.forms ?? null };
     }
     await env.DB.prepare("UPDATE projects SET installation_id = ? WHERE repo = ?").bind(id, repo).run();
-    return { repo, key: cur.key, origins: splitOrigins(cur.allowed_origins), dailyLimit: cur.daily_limit, approval: !!cur.approval };
+    return { repo, key: cur.key, origins: splitOrigins(cur.allowed_origins), dailyLimit: cur.daily_limit, approval: !!cur.approval, forms: cur.forms };
   }
 
   async function listPending(env: Env, key: string): Promise<PendingItem[]> {
@@ -406,11 +461,18 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
         const p = await getProject(env, m[1]);
         if (!p) return html(messagePage("Not found", "<p>Unknown project.</p>"), {}, 404);
         const meta: Record<string, string> = {};
-        let shown = forms;
+        let shown = projectForms(p);
+        let prefill: string | undefined;
         let lang: "ja" | "en" | undefined;
+        let color: string | undefined;
         for (const [k, v] of url.searchParams) {
           if (k === "lang") {
             if (v === "ja" || v === "en") lang = v;
+          } else if (k === "prefill") {
+            // 入力の先埋め（{ kind?, title?, fields? } の JSON）。形と長さを確かめてフォームに渡すだけ
+            prefill = safePrefill(v);
+          } else if (k === "color") {
+            if (/^#?[0-9a-fA-F]{6}$/.test(v)) color = v.replace("#", "");
           } else if (k === "kinds") {
             const ks = v.split(",");
             const picked = forms.filter((t) => ks.includes(t.kind));
@@ -425,7 +487,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
           // 許可リストがあれば、埋め込めるサイトをそこに限る（Origin チェックの実体）
           `frame-ancestors ${allowed.length ? allowed.join(" ") : "*"}`,
         ].join("; ");
-        return html(formPage({ projectKey: p.key, repo: p.repo, siteKey: env.TURNSTILE_SITE_KEY, forms: shown, meta, nonce, lang }), {
+        return html(formPage({ projectKey: p.key, repo: p.repo, siteKey: env.TURNSTILE_SITE_KEY, forms: shown, meta, nonce, lang, color, prefill }), {
           "content-security-policy": csp, "referrer-policy": "no-referrer",
         });
       }
@@ -437,6 +499,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       if (req.method === "GET" && path === "/api/keys") return apiKeys(req, env);
       if (req.method === "POST" && path === "/api/settings") return apiSettings(req, env);
       if (req.method === "POST" && path === "/api/pending") return apiPending(req, env);
+      if (req.method === "POST" && path === "/api/forms") return apiForms(req, env);
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");

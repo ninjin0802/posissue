@@ -25,7 +25,7 @@
 <h2>4.0 表示言語</h2>
 <p>トップページ・管理画面は日本語と英語に対応する。言語は <code>?lang=ja|en</code> → クッキー <code>pi_lang</code>（<code>?lang=</code> を指定したときに 1 年保存）→ <code>Accept-Language</code>（日本語以外は英語）の順で決める。トップページのナビに切り替えリンクを置く。静的ページは <code>/en/*</code> に英語版を置く。フォームは 8.2 のとおり独自に切り替える。</p>
 <h2>4.1 GET /r/:projectKey</h2>
-<p>クエリはすべて文字列で <code>meta</code> に入る（例：<code>?app_version=1.2.0&amp;os=ios</code>）。ただし <code>kinds</code>（カンマ区切り）は表示する種別の指定に、<code>lang</code>（<code>ja</code> / <code>en</code>）は最初に表示する言語の指定に使う。meta のキーは英数字・_・- のみ受け付ける。存在しないキーは 404。</p>
+<p>クエリはすべて文字列で <code>meta</code> に入る（例：<code>?app_version=1.2.0&amp;os=ios</code>）。ただし <code>kinds</code>（カンマ区切り）は表示する種別の指定に、<code>lang</code>（<code>ja</code> / <code>en</code>）は最初に表示する言語の指定に、<code>color</code>（6 桁の 16 進）はフォームのアクセント色に、<code>prefill</code>（<code>{ kind?, title?, fields? }</code> の JSON、6000 文字まで）は入力の先埋めに使う（どちらも不正な値は無視し、prefill は決まった形・長さに絞ってから渡す）。フォームは作者が設定した型（4.8）で表示する。meta のキーは英数字・_・- のみ受け付ける。存在しないキーは 404。</p>
 <h2>4.2 POST /api/report</h2>
 <p>リクエスト：<code>Content-Type: application/json</code>、本文は <code>ReportRequest</code>（3.1）。</p>
 <table>
@@ -69,6 +69,9 @@
 <li>承認待ちは 14 日で自動的に消す。応答：200 / 400 invalid_input / 401 session_expired / 403 forbidden / 404 not_found / 429 rate_limited / 502 upstream_error。</li>
 <li>v1.2 では作者への通知はない（キー確認画面で件数を見る）。</li>
 </ul>
+<h2>4.8 POST /api/forms（作者ごとのフォームの型、v1.5）</h2>
+<p>要求：<code>{ session, repo, forms: FormTemplate[] | null }</code>。<code>null</code> で標準に戻す。認可は 4.6 と同じ（管理者のみ、署名付きトークン、同一オリジン、回数制限）。型は <code>parseFormsInput()</code> で検証し、正規化したものを <code>projects.forms</code> に保存する。不正なら 400 <code>{ ok: false, error: "invalid_forms", message }</code>。</p>
+<p>報告の受け付け（4.2）は、プロジェクトを読んでからその型で入力を検証し、Issue 本文もその型の見出しで組み立てる。保存された型が壊れていた場合は標準の型を使う。</p>
 <h2>4.4 POST /webhook</h2>
 <p><code>X-Hub-Signature-256</code> を HMAC-SHA256 で検証する（MUST）。扱うイベント：<code>installation.deleted</code> → 該当プロジェクトを全停止、<code>installation_repositories.removed</code> → 該当リポジトリのプロジェクトを停止。</p>
 

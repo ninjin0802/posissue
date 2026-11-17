@@ -3,6 +3,29 @@
 PosIssue の変更履歴です。ホームページ版は https://posissue.2nj.lol/changelog 、各版の詳細は [GitHub Releases](https://github.com/ninjin0802/posissue/releases) にあります。
 （このファイル、`apps/hosted/public/changelog.html`、英語版 `apps/hosted/public/en/changelog.html` は同じ内容です。変えたらすべて更新してください。）
 
+## v1.5.0 — 2026-11-17
+
+### 新機能
+- **公式ホストでもフォームの項目を自由に決められる**ようになりました。管理画面の「フォーム」タブで、種別と項目を JSON（`FormTemplate`）で設定できます。「標準に戻す」もできます。
+- **入力の先埋め（`prefill`）**：種別・タイトル・各項目をあらかじめ入れた状態でフォームを開けます。`open({ prefill })` で開くたびに変えられ、アプリでは URL の `prefill` で渡せます。
+- **送信後・閉じたときの処理（`onSubmit` / `onClose`）**：送信が終わったらお礼を出す、などができます。script タグ版は `window` の `posissue:submit` イベントで受け取れます。
+
+## v1.4.0 — 2026-11-17
+
+### 新機能
+- **ウィジェットの自由度を上げました。**
+  - `position`：4 隅（右下・左下・右上・左上）から選べます。
+  - `offset`：端からの距離を px で指定できます（縦横べつべつにも）。
+  - `button: false`：浮いたボタンを出さず、自前のボタンやメニューから `open()` で開けます（script タグ版は `window.PosIssue.open()`）。
+  - `variant: "icon"`：丸いアイコンだけのボタンにできます。
+  - `color`：ボタンとフォームのアクセント色をブランド色に合わせられます。アプリの URL でも `color=e91e63` で指定できます。
+  - `zIndex`：ほかの浮いた要素と重なるときの重なり順を調整できます。
+- script タグ版では、すべての設定を `data-` 属性で指定できます。
+
+### 改善
+- スマホでのトップページ・フォーム・管理画面の表示を整えました。
+- トップページの `npm i posissue` に、何のためのコマンドかの説明を付けました。
+
 ## v1.3.0 — 2026-11-17
 
 ### 新機能

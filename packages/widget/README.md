@@ -35,11 +35,31 @@ widget.open();    // open the form from your own button
 widget.destroy(); // remove it
 ```
 
-Prefer no build step? Use the script tag:
+Use your own button instead of the floating one:
+
+```ts
+const widget = init({ projectKey: "pk_xxx", button: false, color: "#e91e63" });
+document.querySelector("#feedback")!.addEventListener("click", () => widget.open());
+```
+
+Prefer no build step? Use the script tag (every option has a `data-` attribute):
 
 ```html
-<script src="https://posissue.2nj.lol/widget.js" data-key="pk_xxx" async></script>
+<script src="https://posissue.2nj.lol/widget.js" data-key="pk_xxx"
+  data-position="bottom-left" data-offset="24,80" data-variant="icon" data-color="#e91e63" async></script>
 ```
+
+With `data-button="false"`, open it from your own button with `window.PosIssue.open()`. Listen for `window.addEventListener("posissue:submit", e => ...)` to react after sending.
+
+Pre-fill from an error screen:
+
+```ts
+widget.open({ prefill: { kind: "bug", title: "Crash on save", fields: { actual: String(error) } } });
+```
+
+The form’s fields themselves can be customized per repository in the [dashboard](https://posissue.2nj.lol/admin) (Form tab).
+
+In apps, add `color=e91e63` to the form URL to match your brand color.
 
 ## Options
 
@@ -49,7 +69,15 @@ Prefer no build step? Use the script tag:
 | `endpoint` | `string` | Self-hosted server URL (default: `https://posissue.2nj.lol`) |
 | `lang` | `"ja" \| "en"` | Form language |
 | `kinds` | `("bug" \| "feature" \| "other")[]` | Report types to show |
-| `position` | `"bottom-right" \| "bottom-left"` | Button position |
+| `position` | `"bottom-right" \| "bottom-left" \| "top-right" \| "top-left"` | Button corner |
+| `offset` | `number \| { x?: number; y?: number }` | Distance from the edges in px (default 20) |
+| `button` | `boolean` | `false` hides the floating button — open the form from your own UI with `open()` |
+| `variant` | `"pill" \| "icon"` | Text button (default) or a round icon button |
+| `color` | `string` | Accent color `#rrggbb` for the button and the form |
+| `zIndex` | `number` | Stacking order if it overlaps other floating elements |
+| `prefill` | `{ kind?, title?, fields? }` | Pre-fill the form (also `widget.open({ prefill })`) |
+| `onSubmit` | `(r) => void` | Called after sending: `{ kind, issueNumber?, issueUrl?, pending? }` |
+| `onClose` | `() => void` | Called when the form closes |
 | `label` | `string` | Button text |
 | `meta` | `Record<string, string>` | Extra info attached to the issue |
 
