@@ -1,2 +1,10 @@
-{ "name": "posissue-hosted", "private": true, "type": "module",
-  "scripts": { "dev": "wrangler dev", "deploy": "wrangler deploy", "migrate": "wrangler d1 migrations apply posissue" } }
+{
+  "name": "posissue-hosted",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "npm --prefix ../.. run build && wrangler deploy",
+    "migrate": "wrangler d1 migrations apply posissue"
+  }
+}

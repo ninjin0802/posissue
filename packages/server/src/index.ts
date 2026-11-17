@@ -3,7 +3,7 @@ import {
   assertForms, buildIssue, DEFAULT_FORMS, parseReportRequest, reportUrls,
   type ErrorCode, type FormTemplate, type ReportResponse,
 } from "@posissue/core";
-import { mount } from "../../widget/src/index"; // npm の posissue は dist を指すので、同じリポジトリ内はソースを直接読む
+import { mount } from "posissue"; // ウィジェット本体。/widget.js として配信する（先に npm run build -w posissue が必要）
 import { createIssue, isOurUserToken, userInstallationRepos, userInstallations, userToken, verifyWebhook, type GitHubCreds } from "./github";
 import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow, type Lang, type PendingItem } from "./pages";
 import { normalizeDailyLimit, normalizeOrigins, signSession, verifySession } from "./session";
