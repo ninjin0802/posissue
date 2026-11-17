@@ -21,7 +21,7 @@ Put this before `</body>`:
 <script src="https://posissue.2nj.lol/widget.js" data-key="pk_XXXXXXXXXXXXXXXXXXXXXXXX" async></script>
 ```
 
-Optional attributes: `data-lang="ja|en"`, `data-position="bottom-right|bottom-left"`, `data-label="Feedback"`, `data-kinds="bug,feature,other"`.
+Optional attributes: `data-lang="ja|en"`, `data-position="bottom-right|bottom-left|top-right|top-left"`, `data-offset="24"` or `"24,80"` (x,y px), `data-variant="pill|icon"`, `data-color="#rrggbb"`, `data-label="Feedback"`, `data-kinds="bug,feature,other"`, `data-z-index="1000"`, `data-button="false"` (no floating button; open it from your own UI with `window.PosIssue.open()`).
 
 ### npm (bundled apps: React, Vue, Svelte, etc.)
 
@@ -29,7 +29,7 @@ Optional attributes: `data-lang="ja|en"`, `data-position="bottom-right|bottom-le
 
 ```ts
 import { init } from "posissue";
-const w = init({ projectKey: "pk_...", lang: "en" }); // lang?, position?, label?, kinds?, meta?, endpoint?
+const w = init({ projectKey: "pk_...", lang: "en" }); // lang?, position?, offset?, button?, variant?, color?, label?, kinds?, zIndex?, meta?, endpoint?
 // w.open(); w.close(); w.destroy();
 ```
 
@@ -43,7 +43,7 @@ Open this URL in a WebView or the system browser (e.g. from a "Send feedback" me
 https://posissue.2nj.lol/r/pk_XXXXXXXXXXXXXXXXXXXXXXXX?lang=en&app_version=1.2.0&os=ios&os_version=18.1
 ```
 
-Query parameters other than `lang` and `kinds` are attached to the issue as environment info (keys: letters, digits, `_`, `-`; values up to 200 chars; up to 18 keys).
+Use `color=rrggbb` to match the app’s brand color. Query parameters other than `lang`, `kinds` and `color` are attached to the issue as environment info (keys: letters, digits, `_`, `-`; values up to 200 chars; up to 18 keys).
 The page posts `{ type: "posissue:done", issueNumber }` and `{ type: "posissue:close" }` via `window.parent.postMessage` and, in React Native, `window.ReactNativeWebView.postMessage(JSON.stringify(...))`. The WebView needs JavaScript enabled (Cloudflare Turnstile runs inside).
 
 ## Content Security Policy

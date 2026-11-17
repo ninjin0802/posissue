@@ -14,7 +14,7 @@
     "url": "git+https://github.com/ninjin0802/posissue.git",
     "directory": "packages/server"
   },
-  "version": "1.3.0",
+  "version": "1.4.0",
   "homepage": "https://posissue.2nj.lol",
   "bugs": "https://github.com/ninjin0802/posissue/issues",
   "author": "ninjin0802",
@@ -38,8 +38,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@posissue/core": "^1.3.0",
-    "posissue": "^1.3.0"
+    "@posissue/core": "^1.4.0",
+    "posissue": "^1.4.0"
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && cp ../../LICENSE .",

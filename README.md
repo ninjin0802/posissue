@@ -82,7 +82,19 @@ init({ projectKey: "pk_xxx", lang: "ja" });
 https://posissue.2nj.lol/r/pk_xxx?lang=ja&app_version=1.2.0&os=ios
 ```
 
-`<script>` には `data-lang="ja|en"`、`data-position="bottom-right|bottom-left"`、`data-label="フィードバック"`、`data-kinds="bug,feature,other"` を付けられます。アプリの URL のクエリ（`lang`・`kinds` 以外）は、環境情報として Issue に載ります。
+ボタンの位置や見た目は、オプションで自由に変えられます（`<script>` では `data-` 付きの属性、npm では同じ名前の設定）。
+
+| オプション | 例 | 中身 |
+|---|---|---|
+| `position` | `top-left` | 4 隅のどこに置くか（既定 `bottom-right`） |
+| `offset` | `24,80` / `{ x: 24, y: 80 }` | 端からの距離（px、既定 20） |
+| `button` | `false` | 浮いたボタンを出さない。自前のボタンから `open()`（`<script>` なら `window.PosIssue.open()`）で開く |
+| `variant` | `icon` | 文字付きのボタン（既定）か、丸いアイコンだけのボタンか |
+| `color` | `#e91e63` | ボタンとフォームのアクセント色 |
+| `label` | `ご意見` | ボタンの文字 |
+| `lang` / `kinds` / `zIndex` | `en` / `bug,feature` / `1000` | 言語・出す種別・重なり順 |
+
+アプリの URL では `lang`・`kinds`・`color` を指定でき、それ以外のクエリは環境情報として Issue に載ります。
 
 ### 3. Issue が届く
 
