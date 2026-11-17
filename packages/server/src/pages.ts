@@ -350,8 +350,23 @@ h1{font-size:28px;letter-spacing:-.02em;margin:0 0 4px}.lead{margin:0;color:var(
 .stat b{display:block;font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--muted)}
 .stat.hot b{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .ok-banner{display:flex;gap:10px;align-items:center;background:var(--soft);color:var(--fg);border-radius:14px;padding:12px 16px;margin-bottom:18px;font-size:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
-.head{display:flex;align-items:center;gap:10px;padding:16px 20px 0;flex-wrap:wrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden}
+.head{display:flex;align-items:center;gap:10px;padding:14px 20px;flex-wrap:wrap;width:100%;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.head.static{cursor:default;padding-bottom:0}
+.head:hover h2{color:var(--accent)}.head:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:18px}
+.head[aria-expanded=true]{padding-bottom:0}
+.chev{margin-left:auto;width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;flex-shrink:0}
+.head[aria-expanded=true] .chev{transform:rotate(-135deg)}
+.badge.hot{color:var(--accent-fg);background:var(--accent);border-color:transparent}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px}
+#q{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);font:inherit;font-size:14px}
+#q:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:6px 12px;font:600 12.5px/1 inherit;font-family:inherit;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.none{text-align:center;color:var(--muted);padding:24px}
+.card[hidden]{display:none}
 .head h2{display:flex;align-items:center;gap:8px;font-size:16px;margin:0;word-break:break-all}
 .badge{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .badge.ap{color:var(--accent);background:var(--soft);border-color:transparent}
@@ -414,10 +429,14 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
   const readable = (b: string) => b.replace(/^### /gm, "■ ").replace(/<\/?details>|<\/?summary>/g, "").replace(/\n---\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const fmt = (t: number) => new Date(t * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC";
   let uid = 0;
-  const cards = o.rows.map((r) => {
+  // 承認待ちが多い順 → 停止中は最後 → 名前順。リポジトリが少なければ全部開き、多ければ承認待ちのあるものだけ開く
+  const rows = [...o.rows].sort((a, b) =>
+    (b.pending?.length ?? 0) - (a.pending?.length ?? 0) || Number(!a.key) - Number(!b.key) || a.repo.localeCompare(b.repo));
+  const openAll = rows.length <= 3;
+  const cards = rows.map((r) => {
     const id = `c${uid++}`;
     if (!r.key) {
-      return `<section class="card"><div class="head"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><span class="badge off">停止中</span></div>
+      return `<section class="card" data-name="${esc(r.repo.toLowerCase())}" data-f="stopped"><div class="head static"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><span class="badge off">停止中</span></div>
 <p class="note" style="padding-top:12px">このリポジトリは運営により停止されています。</p></section>`;
     }
     const tag = `<script src="${o.origin}/widget.js" data-key="${r.key}" async></script>`;
@@ -455,13 +474,17 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
 <div class="blk"><label class="lbl" for="${id}-l">1 日に受け付ける件数の上限（1〜1000）</label>
 <input id="${id}-l" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="既定 ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}"></div>
 <div class="save-row"><button type="submit" class="btn">保存</button><span class="st" role="status" aria-live="polite"></span></div></form>`);
-    return `<section class="card" aria-label="${esc(r.repo)}">
-<div class="head"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
-${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? "承認モード" : "すぐに起票"}</span>` : ""}</div>
+    const open = openAll || pend.length > 0;
+    const flags = [pend.length ? "pending" : "", r.approval ? "approval" : "instant"].filter(Boolean).join(" ");
+    return `<section class="card" aria-label="${esc(r.repo)}" data-name="${esc(r.repo.toLowerCase())}" data-f="${flags}">
+<button type="button" class="head" aria-expanded="${open}" aria-controls="${id}-body"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
+${r.canEdit ? `<span class="badge${r.approval ? " ap" : ""}" data-mode>${r.approval ? "承認モード" : "すぐに起票"}</span>` : ""}
+${pend.length ? `<span class="badge hot" data-pcount>承認待ち ${pend.length}</span>` : ""}<span class="chev" aria-hidden="true"></span></button>
+<div class="body" id="${id}-body"${open ? "" : " hidden"}>
 <div class="tabs" role="tablist">${tabs.map(([k, label, extra]) =>
   `<button type="button" class="tab" role="tab" id="${id}-t-${k}" aria-controls="${id}-${k}" aria-selected="${k === first}" tabindex="${k === first ? 0 : -1}">${label}${extra}</button>`).join("")}</div>
 ${setupPanel}${pendingPanel}${settingsPanel}
-${r.canEdit ? "" : `<p class="note">設定の変更と承認は、このリポジトリの管理者だけができます。</p>`}</section>`;
+${r.canEdit ? "" : `<p class="note">設定の変更と承認は、このリポジトリの管理者だけができます。</p>`}</div></section>`;
   }).join("");
   const empty = `<section class="card"><div class="empty" style="padding:44px 20px"><span class="ic" aria-hidden="true">🧩</span>
 まだ PosIssue を入れたリポジトリがありません。<br><br><a class="btn" style="text-decoration:none;display:inline-block" href="${esc(install)}">GitHub App をインストール</a></div></section>`;
@@ -475,7 +498,11 @@ ${o.justInstalled ? `<div class="ok-banner" role="status">✅ インストール
 <div class="hero"><div><h1>管理画面</h1><p class="lead">GitHub で確認できた、あなたがアクセスできるリポジトリだけを表示しています。</p></div>
 <div class="stats"><div class="stat"><b>${o.rows.filter((r) => r.key).length}</b><span>リポジトリ</span></div>
 <div class="stat${totalPending ? " hot" : ""}"><b>${totalPending}</b><span>承認待ち</span></div></div></div>
-${o.rows.length ? cards : empty}
+${rows.length > 3 ? `<div class="tools"><input type="search" id="q" placeholder="リポジトリを検索" aria-label="リポジトリを検索" autocomplete="off">
+<div class="chips" role="group" aria-label="絞り込み"><button type="button" class="chip" aria-pressed="true" data-f="">すべて</button><button type="button" class="chip" aria-pressed="false" data-f="pending">承認待ちあり</button><button type="button" class="chip" aria-pressed="false" data-f="approval">承認モード</button><button type="button" class="chip" aria-pressed="false" data-f="instant">すぐに起票</button></div>
+<button type="button" class="ghost toggle" id="all">すべて開く</button></div>
+<p class="none" id="none" hidden>条件に合うリポジトリはありません。</p>` : ""}
+${o.rows.length ? `<div id="cards">${cards}</div>` : empty}
 ${o.rows.length ? `<div class="addcard"><span>別のリポジトリにも入れる・外す</span><a class="ghost" style="text-decoration:none" href="${esc(install)}">リポジトリを追加・変更</a></div>` : ""}
 </main>
 <footer><a href="/changelog">リリースノート</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer>
@@ -491,6 +518,19 @@ document.querySelectorAll("[role=tablist]").forEach(function(list){var tabs=[].s
 function sel(t){tabs.forEach(function(x){var on=x===t;x.setAttribute("aria-selected",on);x.tabIndex=on?0:-1;document.getElementById(x.getAttribute("aria-controls")).hidden=!on})}
 tabs.forEach(function(t,i){t.addEventListener("click",function(){sel(t)});t.addEventListener("keydown",function(e){var j=e.key==="ArrowRight"?i+1:e.key==="ArrowLeft"?i-1:-1;
 if(j<0&&e.key!=="ArrowLeft")return;j=(j+tabs.length)%tabs.length;sel(tabs[j]);tabs[j].focus();e.preventDefault()})})});
+// 開閉
+function setOpen(h,on){h.setAttribute("aria-expanded",on);document.getElementById(h.getAttribute("aria-controls")).hidden=!on}
+document.querySelectorAll("button.head").forEach(function(h){h.addEventListener("click",function(){setOpen(h,h.getAttribute("aria-expanded")!=="true")})});
+var all=document.getElementById("all");if(all)all.addEventListener("click",function(){var open=all.textContent==="すべて開く";
+document.querySelectorAll(".card:not([hidden]) button.head").forEach(function(h){setOpen(h,open)});all.textContent=open?"すべて閉じる":"すべて開く"});
+// 検索と絞り込み
+var q=document.getElementById("q"),fl="";
+function apply(){var s=(q&&q.value||"").trim().toLowerCase(),n=0;document.querySelectorAll("#cards>.card").forEach(function(c){
+var ok=(!s||c.dataset.name.indexOf(s)>=0)&&(!fl||(" "+c.dataset.f+" ").indexOf(" "+fl+" ")>=0);c.hidden=!ok;if(ok)n++});
+var none=document.getElementById("none");if(none)none.hidden=n>0}
+if(q)q.addEventListener("input",apply);
+document.querySelectorAll(".chip").forEach(function(b){b.addEventListener("click",function(){fl=b.dataset.f;
+document.querySelectorAll(".chip").forEach(function(x){x.setAttribute("aria-pressed",x===b)});apply()})});
 // コピー
 document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener("click",function(){var s=b.querySelector("span");
 navigator.clipboard.writeText(b.dataset.copy).then(function(){b.classList.add("done");s.textContent="コピー済み";setTimeout(function(){b.classList.remove("done");s.textContent="コピー"},1600)},
@@ -512,7 +552,8 @@ call("/api/pending",{repo:it.dataset.repo,id:it.dataset.id,action:b.dataset.acti
 if(!r.ok){say(st,"err",ERR[r.error]||"処理できませんでした。");bs.forEach(function(x){x.disabled=false});return}
 st.className="st ok";st.textContent="";if(r.issueUrl){var a=document.createElement("a");a.href=r.issueUrl;a.target="_blank";a.rel="noopener";a.textContent="Issue #"+r.issueNumber+" を作成しました ↗";st.append(a)}else st.textContent="捨てました";
 it.querySelector("[data-more]").remove();bs.forEach(function(x){x.remove()});it.style.opacity=".6";
-var n=it.closest(".card").querySelector(".n");var c=Math.max(0,Number(n.textContent)-1);n.textContent=c;if(!c)n.classList.remove("hot");
+var card=it.closest(".card"),n=card.querySelector(".n");var c=Math.max(0,Number(n.textContent)-1);n.textContent=c;if(!c)n.classList.remove("hot");
+var pb=card.querySelector("[data-pcount]");if(pb){if(c)pb.textContent="承認待ち "+c;else{pb.remove();card.dataset.f=card.dataset.f.replace("pending","").trim()}}
 if(total){var t=Math.max(0,Number(total.textContent)-1);total.textContent=t;if(!t)total.parentNode.classList.remove("hot")}})
 .catch(function(){say(st,"err","通信に失敗しました。");bs.forEach(function(x){x.disabled=false})})})})});
 })();
