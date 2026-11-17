@@ -13,9 +13,10 @@
 <tr><td>GET</td><td><code>/r/:projectKey</code></td><td>フォームページ（iframe・WebView 用）</td></tr>
 <tr><td>POST</td><td><code>/api/report</code></td><td>レポート送信</td></tr>
 <tr><td>GET</td><td><code>/</code></td><td>ホームページ（紹介・導入方法・App インストール）。Env <code>DEMO_KEY</code> があれば、PosIssue 自身のリポジトリ宛てのフォームを実物のデモとして埋め込み、ウィジェットも置く</td></tr>
-<tr><td>GET</td><td><code>/keys</code></td><td>作者があとから自分のキーを確認するページ。GitHub の認可画面へ送り（<code>state=keys</code>）、戻り先の <code>/setup</code> で、ログインしたユーザーがアクセスできる全インストールのリポジトリとキーを一覧表示する（コピーボタン・貼り付け用コード付き）</td></tr>
+<tr><td>GET</td><td><code>/admin</code>（旧 <code>/keys</code>）</td><td>作者向けの管理画面（キーの確認・設定・承認待ちの処理）。トップページのナビゲーションからリンクする。GitHub の認可画面へ送り（<code>state=keys</code>）、戻り先の <code>/setup</code> で、ログインしたユーザーがアクセスできる全インストールのリポジトリとキーを一覧表示する（コピーボタン・貼り付け用コード付き）</td></tr>
 <tr><td>GET</td><td><code>/setup</code></td><td>App インストール後のコールバック。キーを発行して表示</td></tr>
 <tr><td>POST</td><td><code>/api/settings</code></td><td>作者の設定変更（4.6）</td></tr>
+<tr><td>POST</td><td><code>/api/pending</code></td><td>承認待ちの起票・破棄（4.7）</td></tr>
 <tr><td>POST</td><td><code>/webhook</code></td><td>GitHub App の Webhook</td></tr>
 </table>
 <h2>4.1 GET /r/:projectKey</h2>
@@ -55,6 +56,14 @@
 <p>設定を変えられるのは、そのリポジトリの管理者（GitHub の権限が admin か maintain）だけ。それ以外のユーザーにはキーだけを見せ、設定欄を出さない（MUST）。</p>
 <p>認可：キー確認画面を出すときに、そのユーザーが変更してよい「リポジトリとインストール ID の組」の一覧と期限（15 分）を HMAC-SHA256 で署名したトークン（<code>session</code>、鍵は Env <code>SESSION_SECRET</code>）を画面に埋め込む。設定の送信は本文にこのトークンを入れ、サーバーは署名・期限・対象リポジトリを確かめ、更新は「同じインストール ID で、有効で、停止されていない」行だけに行う（MUST。署名後にアンインストールや付け替えがあれば変えない）。クッキーを使わないので CSRF の対象にならない。加えて同じオリジンからの要求だけを受け付け、IP ごとに回数を制限する。運営が停止したリポジトリは変更できない。</p>
 <p>要求：<code>{ session, repo, allowedOrigins: string[], dailyLimit: number | null }</code>。応答：<code>{ ok: true, allowedOrigins, dailyLimit }</code> ／ 400 invalid_input ／ 401 session_expired ／ 403 forbidden ／ 429 rate_limited。</p>
+<h2>4.7 承認モード（v1.2）</h2>
+<p>リポジトリごとに「承認してから起票」か「すぐに起票」を選べる（<code>projects.approval</code>）。新規登録時の初期値は、GitHub のリポジトリが<strong>公開なら承認モード、非公開ならすぐに起票</strong>（作者が選び直した値は再インストールでも残す）。キー確認画面の「設定」で切り替える（4.6 の <code>approval: boolean</code>）。</p>
+<ul>
+<li>承認モードでは、<code>POST /api/report</code> は 7.1 の検査をすべて通ったあと、起票せずに無害化済みの Issue 内容を <code>pending</code> に保存し、<strong>202</strong> <code>{ ok: true, pending: true }</code> を返す。フォームは「作者が確認したあとに公開されます」と表示する。</li>
+<li>作者はキー確認画面の「承認待ち」で 1 件ずつ「起票する」「捨てる」を選ぶ。<code>POST /api/pending { session, repo, id, action: "approve" | "reject" }</code>。認可は 4.6 と同じ署名付きトークン（管理者のみ、同じインストール ID・有効・未停止）。二重起票を防ぐため先に行を消し、起票に失敗したら戻す。</li>
+<li>承認待ちは 14 日で自動的に消す。応答：200 / 400 invalid_input / 401 session_expired / 403 forbidden / 404 not_found / 429 rate_limited / 502 upstream_error。</li>
+<li>v1.2 では作者への通知はない（キー確認画面で件数を見る）。</li>
+</ul>
 <h2>4.4 POST /webhook</h2>
 <p><code>X-Hub-Signature-256</code> を HMAC-SHA256 で検証する（MUST）。扱うイベント：<code>installation.deleted</code> → 該当プロジェクトを全停止、<code>installation_repositories.removed</code> → 該当リポジトリのプロジェクトを停止。</p>
 

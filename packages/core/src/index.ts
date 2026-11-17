@@ -77,6 +77,7 @@ export type ErrorCode =
 
 export type ReportResponse =
   | { ok: true; issueNumber: number; issueUrl: string }
+  | { ok: true; pending: true } // 承認モード：作者の確認後に起票される
   | { ok: false; error: ErrorCode };
 
 export const LIMITS = { title: 100, body: 5000, metaKeys: 20, metaValue: 200 } as const;
