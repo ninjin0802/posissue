@@ -185,14 +185,14 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       for (const id of ids) {
         const repos = await userInstallationRepos(token, id);
         if (!repos) { if (target !== "keys") return forbidden(); continue; }
-        for (const repo of repos) rows.push(await ensureProject(env, id, repo));
+        for (const repo of repos) rows.push({ ...(await ensureProject(env, id, repo.name)), canEdit: repo.canAdmin, installationId: id });
       }
     } catch (e) {
       console.log(String(e));
       return html(messagePage("Error", "<p>GitHub との通信に失敗しました。時間をおいてお試しください。</p>"), {}, 502);
     }
     const nonce = crypto.randomUUID().replace(/-/g, "");
-    const session = await signSession(env.SESSION_SECRET, rows.filter((r) => r.key).map((r) => r.repo));
+    const session = await signSession(env.SESSION_SECRET, rows.filter((r) => r.key && r.canEdit).map((r) => [r.repo, r.installationId!]));
     return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, session, defaultDailyLimit: perDay, justInstalled: target !== "keys" }), {
       "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; connect-src 'self'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`,
       "cache-control": "no-store",
@@ -215,7 +215,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       if (!(await isOurUserToken(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, token))) return json({ ok: false, error: "unauthorized" }, 401);
       const rows: KeyRow[] = [];
       for (const id of await userInstallations(token)) {
-        for (const repo of (await userInstallationRepos(token, id)) ?? []) rows.push(await ensureProject(env, id, repo));
+        for (const repo of (await userInstallationRepos(token, id)) ?? []) rows.push(await ensureProject(env, id, repo.name));
       }
       return json({ ok: true, endpoint: new URL(req.url).origin, keys: rows.map((r) => ({ repo: r.repo, key: r.key, stopped: r.key === null, allowedOrigins: r.origins, dailyLimit: r.dailyLimit })) });
     } catch (e) {
@@ -237,14 +237,16 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     if (text.length > 4000) return json({ ok: false, error: "invalid_input" }, 400);
     let b: { session?: unknown; repo?: unknown; allowedOrigins?: unknown; dailyLimit?: unknown };
     try { b = JSON.parse(text); } catch { return json({ ok: false, error: "invalid_input" }, 400); }
-    const repos = await verifySession(env.SESSION_SECRET, b.session);
-    if (!repos) return json({ ok: false, error: "session_expired" }, 401);
-    if (typeof b.repo !== "string" || !repos.includes(b.repo)) return json({ ok: false, error: "forbidden" }, 403);
+    const grants = await verifySession(env.SESSION_SECRET, b.session);
+    if (!grants) return json({ ok: false, error: "session_expired" }, 401);
+    const grant = grants.find(([repo]) => repo === b.repo);
+    if (!grant) return json({ ok: false, error: "forbidden" }, 403);
     const allowed = normalizeOrigins(b.allowedOrigins);
     const limit = normalizeDailyLimit(b.dailyLimit);
     if (!allowed || limit === undefined) return json({ ok: false, error: "invalid_input" }, 400);
-    const r = await env.DB.prepare("UPDATE projects SET allowed_origins = ?, daily_limit = ? WHERE repo = ? AND banned = 0")
-      .bind(allowed.join(","), limit, b.repo).run();
+    // 署名後にアンインストール・付け替えされていたら変えない
+    const r = await env.DB.prepare("UPDATE projects SET allowed_origins = ?, daily_limit = ? WHERE repo = ? AND installation_id = ? AND active = 1 AND banned = 0")
+      .bind(allowed.join(","), limit, grant[0], grant[1]).run();
     if (!r.meta.changes) return json({ ok: false, error: "forbidden" }, 403);
     return json({ ok: true, allowedOrigins: allowed, dailyLimit: limit });
   }

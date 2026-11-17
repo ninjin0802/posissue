@@ -317,7 +317,7 @@ ${o.demoKey ? `<script src="/widget.js" data-key="${esc(o.demoKey)}" async></scr
 export const ICON_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" role=\"img\" aria-label=\"PosIssue\">\n  <defs>\n    <linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#6d6af0\"/>\n      <stop offset=\".55\" stop-color=\"#7c5ce6\"/>\n      <stop offset=\"1\" stop-color=\"#c25bd6\"/>\n    </linearGradient>\n    <radialGradient id=\"glow\" cx=\".28\" cy=\".2\" r=\".75\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".35\"/>\n      <stop offset=\"1\" stop-color=\"#fff\" stop-opacity=\"0\"/>\n    </radialGradient>\n    <filter id=\"sh\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"150%\">\n      <feDropShadow dx=\"0\" dy=\"10\" stdDeviation=\"14\" flood-color=\"#2a1170\" flood-opacity=\".35\"/>\n    </filter>\n  </defs>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#bg)\"/>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#glow)\"/>\n  <!-- 吹き出し（フィードバック） -->\n  <path filter=\"url(#sh)\" fill=\"#fff\"\n    d=\"M146 112h220c41 0 74 33 74 74v118c0 41-33 74-74 74H262l-74 62c-9 8-22 1-22-10v-52h-20c-41 0-74-33-74-74V186c0-41 33-74 74-74z\"/>\n  <!-- Issue のマーク（開いた Issue の丸） -->\n  <circle cx=\"256\" cy=\"245\" r=\"54\" fill=\"none\" stroke=\"url(#bg)\" stroke-width=\"22\"/>\n  <circle cx=\"256\" cy=\"245\" r=\"19\" fill=\"url(#bg)\"/>\n</svg>";
 
 /** key=null は運営が停止中。origins は埋め込みを許すサイト（空なら制限なし）、dailyLimit は 1 日の上限（null は既定値） */
-export interface KeyRow { repo: string; key: string | null; origins: string[]; dailyLimit: number | null }
+export interface KeyRow { repo: string; key: string | null; origins: string[]; dailyLimit: number | null; canEdit?: boolean; installationId?: number }
 
 const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
 
@@ -339,7 +339,7 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
 <p class="lbl">アプリの WebView で開く URL</p><div class="row"><code>${esc(app)}</code>${copyBtn(app, "URL")}</div>
 <p class="lbl"><a href="${esc(app)}" target="_blank" rel="noopener">フォームを開いて確かめる ↗</a></p>
 </details>
-<details><summary>設定</summary>
+${r.canEdit ? `<details><summary>設定</summary>
 <form class="set" data-repo="${esc(r.repo)}">
 <label class="lbl" for="o_${esc(r.key)}">埋め込みを許すサイト（1 行に 1 つ、最大 10）</label>
 <textarea id="o_${esc(r.key)}" name="origins" rows="3" placeholder="https://example.com" spellcheck="false">${esc(r.origins.join("\n"))}</textarea>
@@ -347,7 +347,7 @@ export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; n
 <label class="lbl" for="l_${esc(r.key)}">1 日に受け付ける件数の上限（1〜1000）</label>
 <input id="l_${esc(r.key)}" name="limit" type="number" min="1" max="1000" inputmode="numeric" placeholder="既定: ${o.defaultDailyLimit}" value="${r.dailyLimit ?? ""}">
 <div class="act"><button type="submit" class="save">保存</button><span class="st" role="status" aria-live="polite"></span></div>
-</form></details></article>`;
+</form></details>` : `<p class="hint">設定の変更は、このリポジトリの管理者だけができます。</p>`}</article>`;
   }).join("");
   const empty = `<div class="card empty"><p>まだ PosIssue を入れたリポジトリがありません。</p><a class="btn" href="${esc(install)}">GitHub App をインストール</a></div>`;
   return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

@@ -7,16 +7,19 @@ const unb64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replac
 const hmacKey = (secret: string, use: KeyUsage[]) =>
   crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, use);
 
-export const SESSION_TTL_SEC = 30 * 60;
+export const SESSION_TTL_SEC = 15 * 60;
 
-export async function signSession(secret: string, repos: string[], now = Math.floor(Date.now() / 1000)) {
+/** 変更してよいリポジトリと、そのときのインストール ID の組 */
+export type Grant = [repo: string, installationId: number];
+
+export async function signSession(secret: string, repos: Grant[], now = Math.floor(Date.now() / 1000)) {
   const body = b64url(enc.encode(JSON.stringify({ r: repos, e: now + SESSION_TTL_SEC })));
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(secret, ["sign"]), enc.encode(body)));
   return `${body}.${b64url(sig)}`;
 }
 
-/** 署名と期限が正しければ、触ってよいリポジトリの一覧。そうでなければ null。 */
-export async function verifySession(secret: string, token: unknown, now = Math.floor(Date.now() / 1000)): Promise<string[] | null> {
+/** 署名と期限が正しければ、触ってよいリポジトリとインストール ID の組の一覧。そうでなければ null。 */
+export async function verifySession(secret: string, token: unknown, now = Math.floor(Date.now() / 1000)): Promise<Grant[] | null> {
   if (typeof token !== "string" || token.length > 8000) return null;
   const [body, sig] = token.split(".");
   if (!body || !sig) return null;
@@ -25,7 +28,7 @@ export async function verifySession(secret: string, token: unknown, now = Math.f
     if (!ok) return null;
     const d = JSON.parse(new TextDecoder().decode(unb64url(body))) as { r: unknown; e: unknown };
     if (typeof d.e !== "number" || d.e < now || !Array.isArray(d.r)) return null;
-    return d.r.filter((x): x is string => typeof x === "string");
+    return d.r.filter((x): x is Grant => Array.isArray(x) && typeof x[0] === "string" && typeof x[1] === "number");
   } catch { return null; }
 }
 
