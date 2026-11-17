@@ -394,7 +394,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       }
 
       if (req.method === "GET" && (path === "/icon.svg" || path === "/favicon.ico")) {
-        return new Response(ICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
+        return new Response(ICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=3600" } });
       }
 
       if (req.method === "GET" && path === "/widget.js") {
