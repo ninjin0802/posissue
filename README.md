@@ -94,6 +94,17 @@ https://posissue.2nj.lol/r/pk_xxx?app_version=1.2.0&os=ios
 <details><summary>Environment</summary> page / userAgent / appVersion ... </details>
 ```
 
+## 🤖 AI に導入してもらう
+
+Claude Code や Cursor などの AI に、次のように頼むだけで導入できます。AI 向けの手順は [`/llms.txt`](https://posissue.2nj.lol/llms.txt) にまとめてあります。
+
+```text
+https://posissue.2nj.lol/llms.txt を読んで、このプロジェクトに PosIssue のフィードバックウィジェットを入れて。
+projectKey は pk_xxxxxxxxxxxxxxxxxxxxxxxx。
+```
+
+このリポジトリ自体を AI で開発するときのルールは [`AGENTS.md`](AGENTS.md) にあります。
+
 ## 📐 フォームを型で決める
 
 フォームの項目は `FormTemplate` で決めます。書き間違えるとエディタが教えてくれて、起動時にもチェックされます。
