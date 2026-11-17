@@ -52,7 +52,8 @@
 <li><strong>埋め込みを許すサイト</strong>（<code>allowed_origins</code>）：オリジン（<code>https://example.com</code> の形）だけ、最大 10。空なら制限なし。フォームページの CSP <code>frame-ancestors</code> と、API の Origin 検査に使う（7.1 #6、7.3）。</li>
 <li><strong>1 日の上限</strong>（<code>daily_limit</code>）：1〜1000 の整数。<code>null</code> で既定値（9.2）に戻す。</li>
 </ul>
-<p>認可：キー確認画面を出すときに、そのユーザーが変更してよいリポジトリの一覧と期限（30 分）を HMAC-SHA256 で署名したトークン（<code>session</code>、鍵は Env <code>SESSION_SECRET</code>）を画面に埋め込む。設定の送信は本文にこのトークンを入れ、サーバーは署名・期限・対象リポジトリを確かめる（MUST）。クッキーを使わないので CSRF の対象にならない。加えて同じオリジンからの要求だけを受け付け、IP ごとに回数を制限する。運営が停止したリポジトリは変更できない。</p>
+<p>設定を変えられるのは、そのリポジトリの管理者（GitHub の権限が admin か maintain）だけ。それ以外のユーザーにはキーだけを見せ、設定欄を出さない（MUST）。</p>
+<p>認可：キー確認画面を出すときに、そのユーザーが変更してよい「リポジトリとインストール ID の組」の一覧と期限（15 分）を HMAC-SHA256 で署名したトークン（<code>session</code>、鍵は Env <code>SESSION_SECRET</code>）を画面に埋め込む。設定の送信は本文にこのトークンを入れ、サーバーは署名・期限・対象リポジトリを確かめ、更新は「同じインストール ID で、有効で、停止されていない」行だけに行う（MUST。署名後にアンインストールや付け替えがあれば変えない）。クッキーを使わないので CSRF の対象にならない。加えて同じオリジンからの要求だけを受け付け、IP ごとに回数を制限する。運営が停止したリポジトリは変更できない。</p>
 <p>要求：<code>{ session, repo, allowedOrigins: string[], dailyLimit: number | null }</code>。応答：<code>{ ok: true, allowedOrigins, dailyLimit }</code> ／ 400 invalid_input ／ 401 session_expired ／ 403 forbidden ／ 429 rate_limited。</p>
 <h2>4.4 POST /webhook</h2>
 <p><code>X-Hub-Signature-256</code> を HMAC-SHA256 で検証する（MUST）。扱うイベント：<code>installation.deleted</code> → 該当プロジェクトを全停止、<code>installation_repositories.removed</code> → 該当リポジトリのプロジェクトを停止。</p>

@@ -3,10 +3,10 @@ import { normalizeDailyLimit, normalizeOrigins, signSession, verifySession } fro
 
 describe("session", () => {
   it("signs, verifies, and rejects tampering and expiry", async () => {
-    const t = await signSession("s", ["a/b"], 1000);
-    expect(await verifySession("s", t, 1001)).toEqual(["a/b"]);
+    const t = await signSession("s", [["a/b", 7]], 1000);
+    expect(await verifySession("s", t, 1001)).toEqual([["a/b", 7]]);
     expect(await verifySession("other", t, 1001)).toBeNull();
-    expect(await verifySession("s", t, 1000 + 31 * 60)).toBeNull();
+    expect(await verifySession("s", t, 1000 + 16 * 60)).toBeNull();
     const [, sig] = t.split(".");
     const forged = btoa(JSON.stringify({ r: ["x/y"], e: 99999 })).replace(/=+$/, "");
     expect(await verifySession("s", `${forged}.${sig}`, 1001)).toBeNull();
