@@ -148,6 +148,56 @@ describe("POST /api/pending and /api/settings", () => {
   });
 });
 
+describe("custom forms and prefill", () => {
+  const admin = (env: Parameters<typeof call>[0], body: unknown) =>
+    call(env, "/api/forms", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json", origin: ORIGIN } });
+  const custom = [{ kind: "feature", label: { en: "Idea", ja: "アイデア" }, fields: [
+    { id: "what", type: "textarea", required: true, label: "What" },
+    { id: "plan", type: "select", label: "Plan", options: [{ value: "free", label: "Free" }, { value: "pro", label: "Pro" }] },
+  ] }];
+
+  it("saves a custom form and uses it for the form page and reports", async () => {
+    const { env } = await setup();
+    const session = await signSession("sess", [["me/app", 7]]);
+    const res = await admin(env, { session, repo: "me/app", forms: custom });
+    expect(res.status).toBe(200);
+    const page = await (await call(env, `/r/${KEY}`)).text();
+    expect(page).toContain('"id":"what"');
+    expect(page).not.toContain('"id":"steps"');
+    const calls = mockFetch();
+    // 標準の型の報告は通らない（この作者は bug を出していない）
+    expect((await post(env, report())).status).toBe(400);
+    const ok = await post(env, report({ kind: "feature", fields: { what: "dark mode", plan: "pro" } }));
+    expect(ok.status).toBe(201);
+    expect(String(calls.issues[0].body.body)).toContain("### What\n\ndark mode");
+    expect(String(calls.issues[0].body.body)).toContain("### Plan\n\nPro");
+  });
+
+  it("rejects invalid forms with a message and resets to the standard form", async () => {
+    const { env } = await setup();
+    const session = await signSession("sess", [["me/app", 7]]);
+    const bad = await admin(env, { session, repo: "me/app", forms: [{ kind: "bug", label: "B", fields: [{ id: "x y", type: "text", label: "x" }] }] });
+    expect(bad.status).toBe(400);
+    expect((await bad.json()).message).toMatch(/id/);
+    expect((await admin(env, { session: "x.y", repo: "me/app", forms: custom })).status).toBe(401);
+    expect((await admin(env, { session, repo: "other/app", forms: custom })).status).toBe(403);
+    await admin(env, { session, repo: "me/app", forms: custom });
+    expect((await admin(env, { session, repo: "me/app", forms: null })).status).toBe(200);
+    expect(await (await call(env, `/r/${KEY}`)).text()).toContain('"id":"steps"');
+  });
+
+  it("passes a sanitized prefill to the form", async () => {
+    const { env } = await setup();
+    const pre = encodeURIComponent(JSON.stringify({ kind: "bug", title: "Crash on save", fields: { steps: "1. save", "bad key!": "x", actual: 5 }, evil: "<script>" }));
+    const html = await (await call(env, `/r/${KEY}?prefill=${pre}`)).text();
+    expect(html).toContain('"prefill":{"kind":"bug","title":"Crash on save","fields":{"steps":"1. save"}}');
+    expect(html).not.toContain("bad key!");
+    expect(html).not.toContain('"prefill":"');
+    const broken = await (await call(env, `/r/${KEY}?prefill=%7Bnot-json`)).text();
+    expect(broken).toContain('"prefill":null');
+  });
+});
+
 describe("pages and OAuth", () => {
   it("serves the landing page in the requested language and remembers it", async () => {
     const { env } = await setup();

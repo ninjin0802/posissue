@@ -49,7 +49,15 @@ Prefer no build step? Use the script tag (every option has a `data-` attribute):
   data-position="bottom-left" data-offset="24,80" data-variant="icon" data-color="#e91e63" async></script>
 ```
 
-With `data-button="false"`, open it from your own button with `window.PosIssue.open()`.
+With `data-button="false"`, open it from your own button with `window.PosIssue.open()`. Listen for `window.addEventListener("posissue:submit", e => ...)` to react after sending.
+
+Pre-fill from an error screen:
+
+```ts
+widget.open({ prefill: { kind: "bug", title: "Crash on save", fields: { actual: String(error) } } });
+```
+
+The form’s fields themselves can be customized per repository in the [dashboard](https://posissue.2nj.lol/admin) (Form tab).
 
 In apps, add `color=e91e63` to the form URL to match your brand color.
 
@@ -67,6 +75,9 @@ In apps, add `color=e91e63` to the form URL to match your brand color.
 | `variant` | `"pill" \| "icon"` | Text button (default) or a round icon button |
 | `color` | `string` | Accent color `#rrggbb` for the button and the form |
 | `zIndex` | `number` | Stacking order if it overlaps other floating elements |
+| `prefill` | `{ kind?, title?, fields? }` | Pre-fill the form (also `widget.open({ prefill })`) |
+| `onSubmit` | `(r) => void` | Called after sending: `{ kind, issueNumber?, issueUrl?, pending? }` |
+| `onClose` | `() => void` | Called when the form closes |
 | `label` | `string` | Button text |
 | `meta` | `Record<string, string>` | Extra info attached to the issue |
 

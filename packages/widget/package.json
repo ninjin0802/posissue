@@ -1,6 +1,6 @@
 {
   "name": "posissue",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "A feedback widget that lets anyone send GitHub issues — no GitHub account needed.",
   "keywords": [
     "github",
