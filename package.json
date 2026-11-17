@@ -8,9 +8,9 @@
   ],
   "scripts": {
     "build": "npm run build -w posissue -w @posissue/core -w @posissue/server",
-    "pretypecheck": "npm run build -w posissue -w @posissue/core",
+    "pretypecheck": "npm run build",
     "typecheck": "tsc --noEmit -p .",
-    "pretest": "npm run build -w posissue -w @posissue/core",
+    "pretest": "npm run build",
     "test": "vitest run",
     "publish:all": "npm publish -w posissue -w @posissue/core -w @posissue/server"
   },
