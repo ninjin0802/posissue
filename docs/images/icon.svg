@@ -1,24 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PosIssue">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6d6af0"/>
-      <stop offset=".55" stop-color="#7c5ce6"/>
-      <stop offset="1" stop-color="#c25bd6"/>
-    </linearGradient>
-    <radialGradient id="glow" cx=".28" cy=".2" r=".75">
-      <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="sh" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#2a1170" flood-opacity=".35"/>
-    </filter>
+    <!-- くり抜き（スリット目） -->
+    <mask id="eyes" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <path d="M164 262c22-24 52-30 78-14-18 26-48 34-78 14z"/>
+      <path d="M348 262c-22-24-52-30-78-14 18 26 48 34 78 14z"/>
+    </mask>
   </defs>
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
-  <!-- 吹き出し（フィードバック） -->
-  <path filter="url(#sh)" fill="#fff"
-    d="M146 112h220c41 0 74 33 74 74v118c0 41-33 74-74 74H262l-74 62c-9 8-22 1-22-10v-52h-20c-41 0-74-33-74-74V186c0-41 33-74 74-74z"/>
-  <!-- Issue のマーク（開いた Issue の丸） -->
-  <circle cx="256" cy="245" r="54" fill="none" stroke="url(#bg)" stroke-width="22"/>
-  <circle cx="256" cy="245" r="19" fill="url(#bg)"/>
+  <rect x="4" y="4" width="504" height="504" rx="114" fill="#0d1117" stroke="#30363d" stroke-width="8"/>
+  <g transform="translate(64 64) scale(.75)" fill="#f0f6fc" mask="url(#eyes)">
+    <path d="M96 268c0-92 68-150 160-150s160 58 160 150-68 152-160 152S96 360 96 268z"/>
+    <path d="M110 222 126 74c1-12 13-17 22-10l92 70z"/>
+    <path d="M402 222 386 74c-1-12-13-17-22-10l-92 70z"/>
+  </g>
 </svg>
