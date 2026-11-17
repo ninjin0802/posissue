@@ -180,7 +180,7 @@ nav{position:sticky;top:0;z-index:5;backdrop-filter:saturate(1.6) blur(12px);bac
 nav .w{display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{font-weight:800;letter-spacing:-.02em;font-size:18px;text-decoration:none;display:flex;gap:8px;align-items:center}
 .logo img{width:28px;height:28px;display:block}
-nav .links{display:flex;gap:18px;font-size:14px}nav .links a{text-decoration:none;color:var(--muted)}nav .links a:hover{color:var(--fg)}
+nav .links{display:flex;gap:18px;font-size:14px;align-items:center}nav .sep{width:1px;height:18px;background:var(--line);margin:0 -4px}nav .links a.ib{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;margin:0 -8px}nav .links a.ib:hover{background:var(--soft);color:var(--accent)}nav .links a.ib:focus-visible{outline:2px solid var(--accent);outline-offset:1px}nav .links a{text-decoration:none;color:var(--muted)}nav .links a:hover{color:var(--fg)}
 .hero{position:relative;overflow:hidden;padding:88px 0 72px}
 .hero:before{content:"";position:absolute;inset:-40% -10% auto;height:640px;background:radial-gradient(closest-side,var(--soft),transparent),radial-gradient(closest-side at 70% 40%,rgba(192,91,214,.10),transparent);pointer-events:none}
 .hero .w{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
@@ -226,7 +226,7 @@ pre.solo{border-radius:14px}.k{color:#c4a7ff}.s{color:#9ee6a8}.c{color:#7d7d92}
 .final{text-align:center;border:1px solid var(--line);border-radius:24px;padding:56px 20px;background:linear-gradient(135deg,var(--soft),transparent)}
 .final .cta{justify-content:center}
 footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}footer .fl{display:flex;gap:6px 16px;flex-wrap:wrap}footer .fl a{white-space:nowrap}footer .w{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-@media (max-width:860px){.hero .w,.two{grid-template-columns:1fr}.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}nav .links a.h{display:none}}
+@media (max-width:860px){.hero .w,.two{grid-template-columns:1fr}.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}nav .links a.h,nav .sep{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}`;
 
 /** 公式ホストのトップページ。demoKey があればフォームの実物を埋め込み、ウィジェットも置く（自分自身への報告になる）。 */
@@ -262,7 +262,9 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <meta property="og:image:alt" content="PosIssue — アカウントがなくても、だれでも Issue を。">
 <meta name="twitter:card" content="summary_large_image"><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly docs"><style>${LANDING_STYLE}</style></head><body>
 <nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
-<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a class="h" href="/changelog">リリースノート</a><a class="h" href="#author">作った人</a><a href="/admin">管理画面</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
+<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a class="h" href="/changelog">リリースノート</a><a class="h" href="#author">作った人</a><span class="sep" aria-hidden="true"></span>
+<a class="ib" href="/admin" aria-label="管理画面" title="管理画面"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
+<a class="ib" href="${esc(o.repoUrl)}" aria-label="GitHub" title="GitHub">${GH_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</a></div></div></nav>
 <header class="hero"><div class="w"><div>
 <img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(91,91,214,.35))"><span class="pill">OSS のための報告ウィジェット</span>
 <h1><span>アカウントがなくても、</span><br><em>だれでも Issue を。</em></h1>
