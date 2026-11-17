@@ -42,7 +42,7 @@ const STATUS: Record<ErrorCode, number> = {
 const WIDGET_JS =
   // wrangler(esbuild) の keepNames が関数本体に __name(...) を差し込むので、toString した先でも動くよう同名の素通し関数を置く
   `(function(){var __name=function(f){return f};var s=document.currentScript;if(!s)return;var mount=${mount.toString()};` +
-  `var go=function(){mount({projectKey:s.dataset.key,endpoint:new URL(s.src).origin,position:s.dataset.position,label:s.dataset.label,` +
+  `var go=function(){mount({projectKey:s.dataset.key,endpoint:new URL(s.src).origin,position:s.dataset.position,label:s.dataset.label,lang:s.dataset.lang,` +
   `kinds:s.dataset.kinds?s.dataset.kinds.split(","):undefined})};document.body?go():addEventListener("DOMContentLoaded",go)})();`;
 
 const html = (body: string, headers: Record<string, string> = {}, status = 200) =>
@@ -208,8 +208,11 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
         if (!p) return html(messagePage("Not found", "<p>Unknown project.</p>"), {}, 404);
         const meta: Record<string, string> = {};
         let shown = forms;
+        let lang: "ja" | "en" | undefined;
         for (const [k, v] of url.searchParams) {
-          if (k === "kinds") {
+          if (k === "lang") {
+            if (v === "ja" || v === "en") lang = v;
+          } else if (k === "kinds") {
             const ks = v.split(",");
             const picked = forms.filter((t) => ks.includes(t.kind));
             if (picked.length) shown = picked;
@@ -223,7 +226,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
           // 許可リストがあれば、埋め込めるサイトをそこに限る（Origin チェックの実体）
           `frame-ancestors ${allowed.length ? allowed.join(" ") : "*"}`,
         ].join("; ");
-        return html(formPage({ projectKey: p.key, repo: p.repo, siteKey: env.TURNSTILE_SITE_KEY, forms: shown, meta, nonce }), {
+        return html(formPage({ projectKey: p.key, repo: p.repo, siteKey: env.TURNSTILE_SITE_KEY, forms: shown, meta, nonce, lang }), {
           "content-security-policy": csp, "referrer-policy": "no-referrer",
         });
       }

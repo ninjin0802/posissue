@@ -10,7 +10,7 @@ const STYLE = `
 --shadow:0 1px 2px rgba(20,20,40,.04),0 8px 24px rgba(20,20,40,.06)}
 @media (prefers-color-scheme:dark){:root{--bg:#0e0e14;--card:#17171f;--fg:#ececf3;--muted:#9a9aab;--line:#2a2a36;--field:#1c1c26;
 --accent:#8b8bf5;--accent-fg:#0e0e14;--accent-soft:rgba(139,139,245,.16);--err:#ff6b81;--ok:#4cd498;--shadow:none}}
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}/* タップ時の水色の四角を消す。キーボード操作用のフォーカス表示は残す */
 html,body{margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden}
 body{font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding:20px 16px 28px;-webkit-font-smoothing:antialiased}
 .wrap{max-width:520px;margin:0 auto}
@@ -18,10 +18,15 @@ header{margin-bottom:18px}
 h1{font-size:19px;line-height:1.35;margin:0 0 4px;letter-spacing:-.01em}
 .sub{color:var(--muted);font-size:13px;margin:0;display:flex;align-items:center;gap:6px}
 .sub svg{flex-shrink:0}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.lang{display:inline-flex;flex-shrink:0;border:1.5px solid var(--line);border-radius:999px;padding:2px;background:var(--card)}
+.lang button{border:0;background:none;color:var(--muted);font:600 12px/1 inherit;font-family:inherit;padding:6px 10px;border-radius:999px;cursor:pointer}
+.lang button[aria-pressed=true]{background:var(--accent);color:var(--accent-fg)}
+.lang button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0 0 18px;padding:0;border:0}
 .kind{position:relative}
 .kind input{position:absolute;opacity:0;inset:0;cursor:pointer}
-.kind span{display:block;height:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--card);transition:border-color .15s,background .15s,box-shadow .15s}
+.kind span{display:block;user-select:none;-webkit-user-select:none;height:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--card);transition:border-color .15s,background .15s,box-shadow .15s}
 .kind b{display:block;font-size:14px}
 .kind small{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin-top:2px}
 .kind input:checked+span{border-color:var(--accent);background:var(--accent-soft)}
@@ -61,13 +66,14 @@ const GH_ICON = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentCo
 const OK_ICON = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg>`;
 
 /** フォームの見た目はフォームの型（FormTemplate[]）から組み立てる。値は textContent で入れるので HTML 注入されない。 */
-export function formPage(o: { projectKey: string; repo: string; siteKey: string; forms: FormTemplate[]; meta: Record<string, string>; nonce: string }) {
-  const cfg = JSON.stringify({ key: o.projectKey, repo: o.repo, forms: o.forms, meta: o.meta }).replace(/</g, "\\u003c");
+export function formPage(o: { projectKey: string; repo: string; siteKey: string; forms: FormTemplate[]; meta: Record<string, string>; nonce: string; lang?: "ja" | "en" }) {
+  const cfg = JSON.stringify({ key: o.projectKey, repo: o.repo, forms: o.forms, meta: o.meta, lang: o.lang }).replace(/</g, "\\u003c");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark"><title>Feedback</title><style>${STYLE}</style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="${o.nonce}"></script></head><body>
 <div class="wrap">
-<header><h1 id="h"></h1><p class="sub">${GH_ICON}<span id="repo"></span></p></header>
+<header><div><h1 id="h"></h1><p class="sub">${GH_ICON}<span id="repo"></span></p></div>
+<div class="lang" role="group" aria-label="Language"><button type="button" data-lang="ja" lang="ja">日本語</button><button type="button" data-lang="en" lang="en">English</button></div></header>
 <form id="f" novalidate>
 <fieldset class="kinds" id="kinds"></fieldset>
 <div class="card">
@@ -86,8 +92,7 @@ export function formPage(o: { projectKey: string; repo: string; siteKey: string;
 </div>
 <script nonce="${o.nonce}">
 (function(){
-var C=${cfg},t0=Date.now(),L=(navigator.language||"").slice(0,2)==="ja"?"ja":"en";
-document.documentElement.lang=L;
+var C=${cfg},t0=Date.now(),L=C.lang||((navigator.language||"").slice(0,2)==="ja"?"ja":"en");
 var T={title:["Title","タイトル"],send:["Send report","送信する"],thanks:["Thank you!","送信しました"],again:["Send another","もう一件送る"],
 foot:["No GitHub account needed · Powered by PosIssue","GitHub アカウントは不要です · Powered by PosIssue"],h:["Send feedback","フィードバックを送る"],
 sent:["Your report was posted as issue #","Issue #"],sent2:[".","として登録されました。"],
@@ -102,30 +107,37 @@ unknown_project:["This project is not available.","このプロジェクトは�
 upstream_error:["Something went wrong. Please try again later.","エラーが発生しました。時間をおいてお試しください。"]};
 var t=function(k){return T[k][L==="ja"?1:0]},lt=function(x){return x==null?"":typeof x==="string"?x:(L==="ja"&&x.ja)||x.en};
 var $=function(id){return document.getElementById(id)},el=function(tag,props){var e=document.createElement(tag);for(var k in props)e[k]=props[k];return e};
-document.querySelectorAll("[data-t]").forEach(function(e){e.textContent=t(e.dataset.t)});
-$("h").textContent=t("h");$("repo").textContent=C.repo;
-var f=$("f"),msg=$("msg"),box=$("fields"),title=$("title"),cur;
-C.forms.forEach(function(tp,i){var w=el("label",{className:"kind"}),r=el("input",{type:"radio",name:"kind",value:tp.kind,checked:i===0}),s=el("span");
-s.append(el("b",{textContent:lt(tp.label)}));if(tp.description)s.append(el("small",{textContent:lt(tp.description)}));
-w.append(r,s);$("kinds").append(w);r.addEventListener("change",function(){render(tp)})});
+var f=$("f"),msg=$("msg"),box=$("fields"),title=$("title"),cur=C.forms[0],lastMsg=null;
+$("repo").textContent=C.repo;
 if(C.forms.length<2)$("kinds").hidden=true;
-function render(tp){cur=tp;box.textContent="";title.placeholder=lt(tp.titlePlaceholder);
+function kinds(){$("kinds").textContent="";C.forms.forEach(function(tp){var w=el("label",{className:"kind"}),r=el("input",{type:"radio",name:"kind",value:tp.kind,checked:tp===cur}),s=el("span");
+s.append(el("b",{textContent:lt(tp.label)}));if(tp.description)s.append(el("small",{textContent:lt(tp.description)}));
+w.append(r,s);$("kinds").append(w);r.addEventListener("change",function(){render(tp)})})}
+// 言語を切り替えても、入力途中の値は残す
+function setLang(l){L=l;document.documentElement.lang=L;
+document.querySelectorAll("[data-t]").forEach(function(e){e.textContent=t(e.dataset.t)});$("h").textContent=t("h");
+document.querySelectorAll("[data-lang]").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.lang===L))});
+var keep={};box.querySelectorAll("input,textarea,select").forEach(function(i){keep[i.name]=i.type==="checkbox"?i.checked:i.value});
+kinds();render(cur,keep);if(lastMsg)say(lastMsg[0],lastMsg[1])}
+document.querySelectorAll("[data-lang]").forEach(function(b){b.addEventListener("click",function(){setLang(b.dataset.lang)})});
+function render(tp,keep){cur=tp;keep=keep||{};box.textContent="";title.placeholder=lt(tp.titlePlaceholder);
 tp.fields.forEach(function(fd){var w=el("div",{className:"f"}),id="f_"+fd.id,inp;
 if(fd.type==="checkbox"){inp=el("input",{type:"checkbox",id:id,name:fd.id});var lb=el("label",{className:"check",htmlFor:id});lb.append(inp,document.createTextNode(lt(fd.label)));w.append(lb)}
 else{var lb2=el("label",{htmlFor:id});lb2.append(el("span",{textContent:lt(fd.label)}));if(fd.required)lb2.append(el("span",{className:"req",textContent:"*",ariaHidden:"true"}));w.append(lb2);
 if(fd.help)w.append(el("p",{className:"help",textContent:lt(fd.help)}));
 if(fd.type==="select"){inp=el("select",{id:id,name:fd.id});inp.append(el("option",{value:"",textContent:"—"}));fd.options.forEach(function(op){inp.append(el("option",{value:op.value,textContent:lt(op.label)}))})}
 else{var max=fd.maxLength||(fd.type==="textarea"?5000:200);inp=el(fd.type==="textarea"?"textarea":"input",{id:id,name:fd.id,maxLength:max,placeholder:lt(fd.placeholder)});if(fd.type==="text")inp.type="text"}
+if(fd.id in keep){if(fd.type==="checkbox")inp.checked=keep[fd.id];else inp.value=keep[fd.id]}
 inp.required=!!fd.required;w.append(inp);
-if(fd.type==="textarea"){var c=el("div",{className:"count",textContent:"0 / "+max});inp.addEventListener("input",function(){c.textContent=inp.value.length+" / "+max});w.append(c)}}
+if(fd.type==="textarea"){var c=el("div",{className:"count",textContent:inp.value.length+" / "+max});inp.addEventListener("input",function(){c.textContent=inp.value.length+" / "+max});w.append(c)}}
 inp.addEventListener("input",function(){inp.removeAttribute("aria-invalid")});box.append(w)})}
-render(C.forms[0]);
-function say(k,err){msg.textContent=k?t(k):"";msg.className=err?"err":""}
+setLang(L);
+function say(k,err){lastMsg=k?[k,err]:null;msg.textContent=k?t(k):"";msg.className=err?"err":""}
 function post(type,data){var m=Object.assign({type:type},data||{});try{if(parent!==window)parent.postMessage(m,"*")}catch(e){}
 if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(JSON.stringify(m))}
 document.addEventListener("keydown",function(e){if(e.key==="Escape")post("posissue:close")});
 var meta=Object.assign({userAgent:navigator.userAgent.slice(0,200),language:navigator.language||""},C.meta);
-$("again").addEventListener("click",function(){$("done").hidden=true;f.hidden=false;f.reset();render(C.forms[0]);t0=Date.now();window.turnstile&&turnstile.reset();title.focus()});
+$("again").addEventListener("click",function(){$("done").hidden=true;f.hidden=false;f.reset();cur=C.forms[0];kinds();render(cur);t0=Date.now();window.turnstile&&turnstile.reset();title.focus()});
 f.addEventListener("submit",function(e){e.preventDefault();var d=new FormData(f),fields={},bad=null;
 [title].concat([].slice.call(box.querySelectorAll("input,textarea,select"))).forEach(function(i){
 var v=i.type==="checkbox"?String(i.checked):i.value;if(i.required&&!v.trim()){i.setAttribute("aria-invalid","true");bad=bad||i}if(i!==title)fields[i.name]=v});
@@ -155,7 +167,7 @@ a{color:var(--accent)}</style></head>
 const LANDING_STYLE = `
 :root{--bg:#fbfbfe;--fg:#16161d;--muted:#5f5f70;--line:#e6e6ef;--card:#fff;--accent:#5b5bd6;--accent2:#c05bd6;--soft:rgba(91,91,214,.1);--code:#14141c;--codefg:#e6e6f0}
 @media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--fg:#ececf3;--muted:#9d9db0;--line:#24242f;--card:#14141c;--accent:#8b8bf5;--accent2:#d58bf5;--soft:rgba(139,139,245,.12);--code:#101018}}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit}.w{max-width:1080px;margin:0 auto;padding:0 20px}
 nav{position:sticky;top:0;z-index:5;backdrop-filter:saturate(1.6) blur(12px);background:color-mix(in srgb,var(--bg) 80%,transparent);border-bottom:1px solid var(--line)}
