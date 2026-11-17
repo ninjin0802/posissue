@@ -42,7 +42,14 @@
 
 ### 1. GitHub App をインストール
 
-[公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。
+[公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。あとから確認したいときは **[キーを確認](https://posissue.2nj.lol/keys)** から GitHub でログインするだけで、自分のリポジトリのキーと貼り付け用コードが一覧で出ます。
+
+ターミナルからも確認できます（Node 18+）。表示された URL とコードでブラウザからログインすると、キーが出ます。
+
+```sh
+npx github:ninjin0802/posissue keys          # 一覧
+npx github:ninjin0802/posissue keys --json   # JSON（スクリプトや AI 向け）
+```
 
 ### 2. ウィジェットを置く
 
@@ -93,6 +100,17 @@ https://posissue.2nj.lol/r/pk_xxx?app_version=1.2.0&os=ios
 
 <details><summary>Environment</summary> page / userAgent / appVersion ... </details>
 ```
+
+## 🤖 AI に導入してもらう
+
+Claude Code や Cursor などの AI に、次のように頼むだけで導入できます。AI 向けの手順は [`/llms.txt`](https://posissue.2nj.lol/llms.txt) にまとめてあります。
+
+```text
+https://posissue.2nj.lol/llms.txt を読んで、このプロジェクトに PosIssue のフィードバックウィジェットを入れて。
+projectKey は pk_xxxxxxxxxxxxxxxxxxxxxxxx。
+```
+
+このリポジトリ自体を AI で開発するときのルールは [`AGENTS.md`](AGENTS.md) にあります。
 
 ## 📐 フォームを型で決める
 

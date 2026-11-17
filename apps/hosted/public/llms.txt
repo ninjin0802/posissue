@@ -1,0 +1,64 @@
+# PosIssue
+
+> PosIssue lets anyone send bug reports and feature requests to an open-source GitHub repository as GitHub Issues, without a GitHub account. The maintainer installs a GitHub App and puts one line (a script tag) on a website, or opens a URL in a mobile/desktop app WebView. Hosted at https://posissue.2nj.lol (Cloudflare Workers). MIT licensed.
+
+## How to add PosIssue to a project (for AI coding agents)
+
+1. The maintainer must install the GitHub App on the target repository: https://github.com/apps/posissue/installations/new
+   (This is a human step: it grants permissions on GitHub. Ask the user to do it.)
+2. Get the project key (`pk_` + 24 alphanumerics). It is a public value (it is embedded in web pages), not a secret. Either:
+   - Run `npx github:ninjin0802/posissue keys --json` (Node 18+). It prints a GitHub URL and a one-time code to stderr.
+     Show them to the user and let the USER open the URL, enter the code and approve in their browser. Never do the GitHub login yourself.
+     stdout then returns JSON: `{ "ok": true, "endpoint": "...", "keys": [{ "repo": "owner/name", "key": "pk_...", "stopped": false }] }`. Pick the key for the target repo.
+   - Or ask the user to open https://posissue.2nj.lol/keys and paste the key.
+3. Add the widget. Choose ONE:
+
+### Website (plain HTML, any framework)
+
+Put this before `</body>`:
+
+```html
+<script src="https://posissue.2nj.lol/widget.js" data-key="pk_XXXXXXXXXXXXXXXXXXXXXXXX" async></script>
+```
+
+Optional attributes: `data-lang="ja|en"`, `data-position="bottom-right|bottom-left"`, `data-label="Feedback"`, `data-kinds="bug,feature,other"`.
+
+### npm (bundled apps: React, Vue, Svelte, etc.)
+
+The npm package `posissue` is not published yet. Until then use the script tag above (e.g. in `index.html`, or Next.js `<Script src=... data-key=... />`).
+Planned API: `import { init } from "posissue"; const w = init({ projectKey, lang?, position?, label?, kinds?, meta? }); w.open(); w.close(); w.destroy();`
+
+### Native / mobile / desktop apps (iOS, Android, Flutter, React Native, Electron)
+
+Open this URL in a WebView or the system browser (e.g. from a "Send feedback" menu item):
+
+```
+https://posissue.2nj.lol/r/pk_XXXXXXXXXXXXXXXXXXXXXXXX?lang=en&app_version=1.2.0&os=ios&os_version=18.1
+```
+
+Query parameters other than `lang` and `kinds` are attached to the issue as environment info (keys: letters, digits, `_`, `-`; values up to 200 chars; up to 18 keys).
+The page posts `{ type: "posissue:done", issueNumber }` and `{ type: "posissue:close" }` via `window.parent.postMessage` and, in React Native, `window.ReactNativeWebView.postMessage(JSON.stringify(...))`. The WebView needs JavaScript enabled (Cloudflare Turnstile runs inside).
+
+## Content Security Policy
+
+If the site has a strict CSP, add `https://posissue.2nj.lol` to `script-src` and `frame-src`.
+
+## What the maintainer receives
+
+An issue titled `[Bug] ...` / `[Feature] ...` / `[Feedback] ...` with labels `via-widget` and `bug` / `enhancement` / `feedback`, the form answers as `### headings`, and a collapsible environment table (page URL without query, user agent, language, custom meta). Mentions (`@user`) and `#123` references are neutralized. To forward issues elsewhere (Discord, Slack), use a normal GitHub repository webhook on the Issues event and filter on the `via-widget` label.
+
+## Limits
+
+- Reports per IP: 2 per minute. Per project: 50 per day.
+- Title up to 100 chars; all fields up to 5000 chars total; at most 2 links.
+- No attachments or replies to the reporter (v1).
+
+## Do not
+
+- Do not call `POST /api/report` directly from server code: it requires a Cloudflare Turnstile token solved in the browser on posissue.2nj.lol.
+- Do not invent a project key; ask the user.
+
+## Self-hosting and source
+
+- Source and spec (single source of truth: `docs/spec/`): https://github.com/ninjin0802/posissue
+- Self-host on your own Cloudflare account with `@posissue/server` (`createHandler({ forms })`); forms are defined by the typed `FormTemplate`. See the README and `docs/spec/09-operations.html`.

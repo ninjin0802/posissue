@@ -245,14 +245,14 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <meta property="og:description" content="サイトやアプリに 1 行置くだけ。利用者のバグ報告や要望が、あなたの OSS リポジトリに GitHub Issue として届きます。">
 <meta property="og:image" content="${esc(o.origin)}/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="PosIssue — アカウントがなくても、だれでも Issue を。">
-<meta name="twitter:card" content="summary_large_image"><style>${LANDING_STYLE}</style></head><body>
+<meta name="twitter:card" content="summary_large_image"><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly docs"><style>${LANDING_STYLE}</style></head><body>
 <nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
-<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
+<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a href="/keys">キーを確認</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
 <header class="hero"><div class="w"><div>
 <img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(91,91,214,.35))"><span class="pill">OSS のための報告ウィジェット</span>
 <h1><span>アカウントがなくても、</span><br><em>だれでも Issue を。</em></h1>
 <p class="lead">サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。</p>
-<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="${esc(o.repoUrl)}">ソースを見る</a></div>
+<div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="/keys">キーを確認</a><a class="btn" href="${esc(o.repoUrl)}">ソースを見る</a></div>
 </div><div class="demo">${demo}</div></div></header>
 
 <section id="features"><div class="w">
@@ -302,7 +302,7 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 <div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
 </div></div></section>
 
-<footer><div class="w"><span>© PosIssue · MIT License</span><a href="${esc(o.repoUrl)}">github.com/ninjin0802/posissue</a></div></footer>
+<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><a href="${esc(o.repoUrl)}">github.com/ninjin0802/posissue</a></div></footer>
 <script nonce="${o.nonce}">
 document.querySelectorAll("[role=tab]").forEach(function(b){b.addEventListener("click",function(){
 document.querySelectorAll("[role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b)});
@@ -314,3 +314,66 @@ ${o.demoKey ? `<script src="/widget.js" data-key="${esc(o.demoKey)}" async></scr
 
 // docs/images/icon.svg と同じ内容（README 用と配信用）。アイコンを変えるときは両方を更新する
 export const ICON_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" role=\"img\" aria-label=\"PosIssue\">\n  <defs>\n    <linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n      <stop offset=\"0\" stop-color=\"#6d6af0\"/>\n      <stop offset=\".55\" stop-color=\"#7c5ce6\"/>\n      <stop offset=\"1\" stop-color=\"#c25bd6\"/>\n    </linearGradient>\n    <radialGradient id=\"glow\" cx=\".28\" cy=\".2\" r=\".75\">\n      <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".35\"/>\n      <stop offset=\"1\" stop-color=\"#fff\" stop-opacity=\"0\"/>\n    </radialGradient>\n    <filter id=\"sh\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"150%\">\n      <feDropShadow dx=\"0\" dy=\"10\" stdDeviation=\"14\" flood-color=\"#2a1170\" flood-opacity=\".35\"/>\n    </filter>\n  </defs>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#bg)\"/>\n  <rect width=\"512\" height=\"512\" rx=\"116\" fill=\"url(#glow)\"/>\n  <!-- 吹き出し（フィードバック） -->\n  <path filter=\"url(#sh)\" fill=\"#fff\"\n    d=\"M146 112h220c41 0 74 33 74 74v118c0 41-33 74-74 74H262l-74 62c-9 8-22 1-22-10v-52h-20c-41 0-74-33-74-74V186c0-41 33-74 74-74z\"/>\n  <!-- Issue のマーク（開いた Issue の丸） -->\n  <circle cx=\"256\" cy=\"245\" r=\"54\" fill=\"none\" stroke=\"url(#bg)\" stroke-width=\"22\"/>\n  <circle cx=\"256\" cy=\"245\" r=\"19\" fill=\"url(#bg)\"/>\n</svg>";
+
+export interface KeyRow { repo: string; key: string | null } // key=null は運営が停止中
+
+const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
+
+/** ログインした作者に、自分のリポジトリの projectKey と貼り付け用コードを見せる（/setup・/keys）。 */
+export function keysPage(o: { origin: string; appSlug: string; rows: KeyRow[]; nonce: string; justInstalled: boolean }) {
+  const install = `https://github.com/apps/${encodeURIComponent(o.appSlug)}/installations/new`;
+  const copyBtn = (v: string, label: string) =>
+    `<button type="button" class="cp" data-copy="${esc(v)}" aria-label="${esc(label)}をコピー">${COPY_ICON}<span>コピー</span></button>`;
+  const cards = o.rows.map((r) => {
+    if (!r.key) {
+      return `<article class="k off"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2><p class="stop">このリポジトリは運営により停止されています。</p></article>`;
+    }
+    const tag = `<script src="${o.origin}/widget.js" data-key="${r.key}" async></script>`;
+    const app = `${o.origin}/r/${r.key}`;
+    return `<article class="k"><h2>${GH_ICON}<span>${esc(r.repo)}</span></h2>
+<div class="row"><code class="key">${esc(r.key)}</code>${copyBtn(r.key, "キー")}</div>
+<details><summary>貼り付け用のコード</summary>
+<p class="lbl">サイトに貼る（&lt;/body&gt; の前）</p><div class="row"><code>${esc(tag)}</code>${copyBtn(tag, "script タグ")}</div>
+<p class="lbl">アプリの WebView で開く URL</p><div class="row"><code>${esc(app)}</code>${copyBtn(app, "URL")}</div>
+<p class="lbl"><a href="${esc(app)}" target="_blank" rel="noopener">フォームを開いて確かめる ↗</a></p>
+</details></article>`;
+  }).join("");
+  const empty = `<div class="card empty"><p>まだ PosIssue を入れたリポジトリがありません。</p><a class="btn" href="${esc(install)}">GitHub App をインストール</a></div>`;
+  return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><meta name="robots" content="noindex"><title>あなたのキー | PosIssue</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><style>${STYLE}
+.wrap{max-width:680px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:6px}.top img{width:40px;height:40px}
+.top a{text-decoration:none;color:inherit;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px}
+h1{font-size:24px;margin:18px 0 4px}.lead{color:var(--muted);margin:0 0 22px}
+.ok{display:flex;gap:8px;align-items:center;background:var(--accent-soft);border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:14px}
+.k{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
+.k h2{display:flex;align-items:center;gap:8px;font-size:15px;margin:0 0 10px;word-break:break-all}
+.row{display:flex;gap:8px;align-items:stretch}
+.row code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font:13px/1.5 ui-monospace,Menlo,monospace}
+.row code:not(.key){white-space:normal;word-break:break-all}
+.row code.key{font-size:15px;font-weight:600;letter-spacing:.02em}
+.cp{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:0 12px;font:600 13px/1 inherit;font-family:inherit;cursor:pointer}
+.cp:hover{border-color:var(--accent)}.cp.done{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.cp:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details{margin-top:12px}summary{cursor:pointer;color:var(--accent);font-size:14px;font-weight:600}
+.lbl{font-size:12px;color:var(--muted);margin:12px 0 6px}.lbl a{color:var(--accent)}
+.off{opacity:.7}.stop{margin:0;color:var(--err);font-size:14px}
+.empty{text-align:center;padding:32px 18px}.empty p{color:var(--muted);margin:0 0 16px}
+.btn{display:inline-block;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:600;padding:10px 18px;border-radius:10px}
+.foot{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-top:22px;font-size:14px}.foot a{color:var(--accent)}
+</style></head><body><div class="wrap">
+<div class="top"><a href="/"><img src="/icon.svg" alt="" width="40" height="40">PosIssue</a></div>
+<h1>あなたのウィジェットキー</h1>
+<p class="lead">GitHub アカウントで確認できた、あなたがアクセスできるリポジトリだけを表示しています。キーはサイトやアプリに載せる公開の値です。</p>
+${o.justInstalled ? `<div class="ok" role="status">✅ インストールが完了しました。下のコードをサイトに貼るだけで使えます。</div>` : ""}
+${o.rows.length ? cards : empty}
+<div class="foot"><a href="${esc(install)}">リポジトリを追加・変更する</a><a href="/">トップへ戻る</a></div>
+</div>
+<script nonce="${o.nonce}">
+document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener("click",function(){
+var s=b.querySelector("span");navigator.clipboard.writeText(b.dataset.copy).then(function(){
+b.classList.add("done");s.textContent="コピー済み";setTimeout(function(){b.classList.remove("done");s.textContent="コピー"},1600)},
+function(){s.textContent="選択してコピーしてください"})})});
+</script></body></html>`;
+}

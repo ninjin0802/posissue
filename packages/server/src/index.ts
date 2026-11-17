@@ -4,8 +4,8 @@ import {
   type ErrorCode, type FormTemplate, type ReportResponse,
 } from "@posissue/core";
 import { mount } from "posissue";
-import { createIssue, userInstallationRepos, verifyWebhook, type GitHubCreds } from "./github";
-import { esc, formPage, ICON_SVG, landingPage, messagePage } from "./pages";
+import { createIssue, isOurUserToken, userInstallationRepos, userInstallations, userToken, verifyWebhook, type GitHubCreds } from "./github";
+import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow } from "./pages";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
 export { DEFAULT_FORMS } from "@posissue/core";
@@ -145,48 +145,111 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     if (origin) { h.set("access-control-allow-origin", origin); h.set("vary", "origin"); }
   };
 
+  /**
+   * /setup（App のインストール直後）と /keys（あとから確認）の共通処理。
+   * GitHub でログインしてもらい、本人がアクセスできるリポジトリのキーだけを表示する（4.3）。
+   * state は "keys"（全インストール）か installation_id（そのインストールだけ）。
+   */
   async function setup(req: Request, url: URL, env: Env) {
-    // OAuth の往復では installation_id を state で持ち回る
-    const id = Number(url.searchParams.get("installation_id") ?? url.searchParams.get("state"));
-    if (!Number.isInteger(id) || id <= 0) return html(messagePage("Error", "<p>installation_id がありません。</p>"), {}, 400);
-    // 4.3: 見ている人がそのインストールの持ち主だと GitHub で確かめるまで、リポジトリ名もキーも出さない
+    // 4.3: OAuth の state は、こちらが発行してクッキーにも入れたものと一致したときだけ信じる（ログイン CSRF 対策）。
+    // 一致しなければ code は使わず、認可からやり直す（インストール直後に GitHub から来た場合もここを通る。認可済みなら一瞬で戻ってくる）
+    const state = url.searchParams.get("state");
     const code = url.searchParams.get("code");
-    if (!code) {
-      const auth = new URL("https://github.com/login/oauth/authorize");
-      auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
-      auth.searchParams.set("state", String(id));
-      return Response.redirect(auth.toString(), 302);
+    const cookie = /(?:^|;\s*)pi_state=([^;]+)/.exec(req.headers.get("cookie") ?? "")?.[1];
+    const verified = !!(code && state && cookie && state === cookie);
+    const target = verified ? state!.slice(state!.indexOf(".") + 1) : (url.searchParams.get("installation_id") ?? "keys");
+    const one = Number(target);
+    if (target !== "keys" && (!Number.isInteger(one) || one <= 0)) {
+      return html(messagePage("Error", "<p>installation_id がありません。</p>"), {}, 400);
     }
+    // GitHub から戻ってきたのにクッキーがない＝ブロックされている。やり直すと行き来が止まらないので案内を出す
+    if (!verified && code && state && !cookie) {
+      return html(messagePage("Cookie が必要です", `<p>ログインの確認に Cookie を使います。このサイト（posissue.2nj.lol）の Cookie を許可してから、<a href="/keys">もう一度お試しください</a>。</p>`), {}, 400);
+    }
+    if (!verified) return startAuth(env, target);
     // 7.3: GitHub API を呼ぶのはここからなので、ここで IP ごとに絞る（認可画面へのリダイレクトは数えない）
     const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
     if (!(await env.RL_IP.limit({ key: `setup:${ip}` })).success) {
       return html(messagePage("Too many requests", "<p>少し待ってからもう一度お試しください。</p>"), {}, 429);
     }
-    let repos: string[] | null = null;
-    try { repos = await userInstallationRepos(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, code, id); } catch (e) { console.log(String(e)); }
-    if (!repos) return html(messagePage("Forbidden", "<p>このインストールを確認できませんでした。インストールしたアカウントでもう一度お試しください。</p>"), {}, 403);
-    const rows: string[] = [];
-    for (const repo of repos) {
-      // 7.4: 有効なキーがあれば再利用、停止中なら新しいキーに置き換える
-      const cur = await env.DB.prepare("SELECT key, active, banned FROM projects WHERE repo = ?").bind(repo).first<{ key: string; active: number; banned: number }>();
-      // 7.4: 運営が止めたリポジトリは /setup から復活させない（/setup は誰でも呼べるため）
-      if (cur?.banned) { rows.push(`<tr><td>${esc(repo)}</td><td>停止中</td></tr>`); continue; }
-      let key = cur?.key;
-      if (!cur || !cur.active) {
-        key = newKey();
-        await env.DB.prepare(
-          "INSERT INTO projects (key, installation_id, repo) VALUES (?, ?, ?) ON CONFLICT (repo) DO UPDATE SET key = excluded.key, installation_id = excluded.installation_id, active = 1",
-        ).bind(key, id, repo).run();
-      } else {
-        await env.DB.prepare("UPDATE projects SET installation_id = ? WHERE repo = ?").bind(id, repo).run();
+    const forbidden = () => html(messagePage("Forbidden", "<p>確認できませんでした。インストールしたアカウントでもう一度お試しください。</p>"), {}, 403);
+    const rows: KeyRow[] = [];
+    try {
+      const token = await userToken(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, code);
+      if (!token) return forbidden();
+      const ids = target === "keys" ? await userInstallations(token) : [one];
+      for (const id of ids) {
+        const repos = await userInstallationRepos(token, id);
+        if (!repos) { if (target !== "keys") return forbidden(); continue; }
+        for (const repo of repos) rows.push(await ensureProject(env, id, repo));
       }
-      rows.push(`<tr><td>${esc(repo)}</td><td><code>${esc(key!)}</code></td></tr>`);
+    } catch (e) {
+      console.log(String(e));
+      return html(messagePage("Error", "<p>GitHub との通信に失敗しました。時間をおいてお試しください。</p>"), {}, 502);
     }
-    const origin = url.origin;
-    return html(messagePage("PosIssue のセットアップ完了", `<table><tr><th>リポジトリ</th><th>projectKey</th></tr>${rows.join("")}</table>
-<p>サイトに貼り付け:</p><pre><code>${esc(`<script src="${origin}/widget.js" data-key="pk_..." async></script>`)}</code></pre>
-<p>アプリからは <code>${esc(origin)}/r/pk_...</code> を WebView で開いてください。</p>`));
+    const nonce = crypto.randomUUID().replace(/-/g, "");
+    return html(keysPage({ origin: url.origin, appSlug: env.GITHUB_APP_SLUG, rows, nonce, justInstalled: target !== "keys" }), {
+      "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`,
+      "cache-control": "no-store",
+      "set-cookie": "pi_state=; Path=/setup; Max-Age=0; HttpOnly; Secure; SameSite=Lax", // 使い捨て
+    });
   }
+
+  /**
+   * CLI 用（4.5）。GitHub のデバイスフローで作者自身がログインして得たユーザートークンを受け取り、
+   * そのユーザーがアクセスできるリポジトリのキーを JSON で返す。トークンは保存しない。
+   */
+  async function apiKeys(req: Request, env: Env): Promise<Response> {
+    const json = (body: unknown, status = 200) =>
+      Response.json(body, { status, headers: { "cache-control": "no-store" } });
+    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+    if (!(await env.RL_IP.limit({ key: `keys:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
+    const token = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];
+    if (!token) return json({ ok: false, error: "unauthorized" }, 401);
+    try {
+      if (!(await isOurUserToken(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, token))) return json({ ok: false, error: "unauthorized" }, 401);
+      const rows: KeyRow[] = [];
+      for (const id of await userInstallations(token)) {
+        for (const repo of (await userInstallationRepos(token, id)) ?? []) rows.push(await ensureProject(env, id, repo));
+      }
+      return json({ ok: true, endpoint: new URL(req.url).origin, keys: rows.map((r) => ({ repo: r.repo, key: r.key, stopped: r.key === null })) });
+    } catch (e) {
+      console.log(String(e));
+      return json({ ok: false, error: "upstream_error" }, 502);
+    }
+  }
+
+  /** GitHub の認可画面へ送る。state = ランダム値.対象 を、同じ値の短命クッキーと組にする。 */
+  function startAuth(env: Env, target: string) {
+    const state = `${crypto.randomUUID().replace(/-/g, "")}.${target}`;
+    const auth = new URL("https://github.com/login/oauth/authorize");
+    auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
+    auth.searchParams.set("state", state);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        location: auth.toString(),
+        "set-cookie": `pi_state=${state}; Path=/setup; Max-Age=600; HttpOnly; Secure; SameSite=Lax`,
+        "cache-control": "no-store",
+      },
+    });
+  }
+
+  /** 7.4: 有効なキーがあれば再利用、停止中なら新しいキーに置き換える。運営が止めたものは復活させない。 */
+  async function ensureProject(env: Env, id: number, repo: string): Promise<KeyRow> {
+    const cur = await env.DB.prepare("SELECT key, active, banned FROM projects WHERE repo = ?").bind(repo).first<{ key: string; active: number; banned: number }>();
+    if (cur?.banned) return { repo, key: null };
+    if (!cur || !cur.active) {
+      const key = newKey();
+      await env.DB.prepare(
+        "INSERT INTO projects (key, installation_id, repo) VALUES (?, ?, ?) ON CONFLICT (repo) DO UPDATE SET key = excluded.key, installation_id = excluded.installation_id, active = 1",
+      ).bind(key, id, repo).run();
+      return { repo, key };
+    }
+    await env.DB.prepare("UPDATE projects SET installation_id = ? WHERE repo = ?").bind(id, repo).run();
+    return { repo, key: cur.key };
+  }
+
 
   async function webhook(req: Request, env: Env) {
     const body = await req.text();
@@ -260,6 +323,9 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       }
 
       if (req.method === "GET" && path === "/setup") return setup(req, url, env);
+      // あとからキーを確認するページ。GitHub の認可画面へ送り、戻り先の /setup で一覧を出す
+      if (req.method === "GET" && path === "/keys") return startAuth(env, "keys");
+      if (req.method === "GET" && path === "/api/keys") return apiKeys(req, env);
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");

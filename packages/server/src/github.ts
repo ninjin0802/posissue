@@ -44,25 +44,51 @@ async function installationToken(c: GitHubCreds, id: number) {
   return r.token as string;
 }
 
-/**
- * OAuth の code をユーザートークンに換え、そのインストールのうち「そのユーザー自身が見られるリポジトリ」だけを返す。
- * Organization のメンバーが、自分に権限のないリポジトリ名やキーを見られないようにするため。
- * 確かめられなければ null。
- */
-export async function userInstallationRepos(clientId: string, clientSecret: string, code: string, id: number): Promise<string[] | null> {
+/** OAuth の code をユーザートークンに換える。失敗なら null。 */
+export async function userToken(clientId: string, clientSecret: string, code: string): Promise<string | null> {
   const res = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: { accept: "application/json", "content-type": "application/json", "user-agent": "posissue" },
     body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code }),
   });
-  const tok = (await res.json()) as { access_token?: string };
-  if (!tok.access_token) return null;
-  // shortcut: 先頭 100 件のみ。100 リポジトリを超えたらページングを足す
-  const res2 = await fetch(`${API}/user/installations/${id}/repositories?per_page=100`, {
-    headers: { authorization: `Bearer ${tok.access_token}`, accept: "application/vnd.github+json", "user-agent": "posissue" },
+  return ((await res.json()) as { access_token?: string }).access_token ?? null;
+}
+
+/**
+ * トークンが「この App のために発行されたユーザートークン」か GitHub に確かめる（CLI の /api/keys 用）。
+ * 他の App のトークンや PAT を受け付けると、別アプリのインストール ID でプロジェクトを作ってしまうため。
+ */
+export async function isOurUserToken(clientId: string, clientSecret: string, token: string): Promise<boolean> {
+  const res = await fetch(`${API}/applications/${clientId}/token`, {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`, accept: "application/vnd.github+json",
+      "content-type": "application/json", "user-agent": "posissue", "x-github-api-version": "2022-11-28",
+    },
+    body: JSON.stringify({ access_token: token }),
   });
-  if (!res2.ok) return null; // 404 = そのユーザーはこのインストールにアクセスできない
-  const r = (await res2.json()) as { repositories: { full_name: string }[] };
+  return res.ok;
+}
+
+/** そのユーザーがアクセスできる、この App のインストール ID の一覧。 */
+export async function userInstallations(token: string): Promise<number[]> {
+  // shortcut: 先頭 100 件のみ。1 ユーザーが 100 を超えるインストールを持つならページングを足す
+  const r = await gh(`/user/installations?per_page=100`, token);
+  return (r.installations as { id: number }[]).map((x) => x.id);
+}
+
+/**
+ * インストールのうち「そのユーザー自身が見られるリポジトリ」だけを返す。
+ * Organization のメンバーが、自分に権限のないリポジトリ名やキーを見られないようにするため。
+ * アクセスできなければ null。
+ */
+export async function userInstallationRepos(token: string, id: number): Promise<string[] | null> {
+  // shortcut: 先頭 100 件のみ。100 リポジトリを超えたらページングを足す
+  const res = await fetch(`${API}/user/installations/${id}/repositories?per_page=100`, {
+    headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "posissue" },
+  });
+  if (!res.ok) return null; // 404 = そのユーザーはこのインストールにアクセスできない
+  const r = (await res.json()) as { repositories: { full_name: string }[] };
   return r.repositories.map((x) => x.full_name);
 }
 
