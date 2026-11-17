@@ -1,6 +1,6 @@
 // 仕様: docs/spec/03-packages.html 3.2, 08-widget-ui.html 8.1
-export type { ReportKind } from "@posissue/core";
-import type { ReportKind } from "@posissue/core";
+// npm で単体配布するため、ほかのパッケージに依存しない（@posissue/core の ReportKind と同じ型）
+export type ReportKind = "bug" | "feature" | "other";
 
 export const DEFAULT_ENDPOINT = "https://posissue.2nj.lol";
 
