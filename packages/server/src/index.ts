@@ -4,7 +4,7 @@ import {
   type ErrorCode, type FormTemplate, type ReportResponse,
 } from "@posissue/core";
 import { mount } from "posissue";
-import { createIssue, listInstallationRepos, userOwnsInstallation, verifyWebhook, type GitHubCreds } from "./github";
+import { createIssue, userInstallationRepos, verifyWebhook, type GitHubCreds } from "./github";
 import { esc, formPage, ICON_SVG, landingPage, messagePage } from "./pages";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
@@ -162,10 +162,9 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       auth.searchParams.set("state", String(id));
       return Response.redirect(auth.toString(), 302);
     }
-    let allowed = false;
-    try { allowed = await userOwnsInstallation(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, code, id); } catch (e) { console.log(String(e)); }
-    if (!allowed) return html(messagePage("Forbidden", "<p>このインストールを確認できませんでした。インストールしたアカウントでもう一度お試しください。</p>"), {}, 403);
-    const repos = await listInstallationRepos(creds(env), id);
+    let repos: string[] | null = null;
+    try { repos = await userInstallationRepos(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, code, id); } catch (e) { console.log(String(e)); }
+    if (!repos) return html(messagePage("Forbidden", "<p>このインストールを確認できませんでした。インストールしたアカウントでもう一度お試しください。</p>"), {}, 403);
     const rows: string[] = [];
     for (const repo of repos) {
       // 7.4: 有効なキーがあれば再利用、停止中なら新しいキーに置き換える
