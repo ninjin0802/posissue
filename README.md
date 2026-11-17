@@ -14,6 +14,8 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)
 ![Status](https://img.shields.io/badge/status-v1%20preview-8b8bf5.svg)
 
+**[🌐 posissue.2nj.lol](https://posissue.2nj.lol)** · [GitHub App をインストール](https://github.com/apps/posissue/installations/new) · [仕様書](docs/spec/index.html)
+
 <br>
 
 <picture>
@@ -40,7 +42,7 @@
 
 ### 1. GitHub App をインストール
 
-公式ホストの App をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。
+[公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。
 
 ### 2. ウィジェットを置く
 
@@ -50,7 +52,7 @@
 
 ```html
 <script
-  src="https://<endpoint>/widget.js"
+  src="https://posissue.2nj.lol/widget.js"
   data-key="pk_xxx"
   async></script>
 ```
@@ -72,7 +74,7 @@ init({
 **アプリ（iOS / Android / Flutter / Electron など）** は、次の URL を WebView で開くだけです。
 
 ```
-https://<endpoint>/r/pk_xxx?app_version=1.2.0&os=ios
+https://posissue.2nj.lol/r/pk_xxx?app_version=1.2.0&os=ios
 ```
 
 ### 3. Issue が届く
@@ -164,7 +166,7 @@ cd apps/hosted && npx wrangler dev
 
 ## ⚠️ 注意
 
-- 厳しい CSP のサイトでは、`script-src` と `frame-src` に `<endpoint>` を追加してください。
+- 厳しい CSP のサイトでは、`script-src` と `frame-src` に `posissue.2nj.lol` を追加してください。
 - v1 では、報告した人への返信、スクリーンショットの添付、管理画面はまだありません（[ロードマップ](docs/spec/10-roadmap.html)）。
 
 ## 📄 ライセンス
