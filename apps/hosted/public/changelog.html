@@ -1,0 +1,47 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>リリースノート | PosIssue</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><style>:root{--bg:#fbfbfe;--fg:#16161d;--muted:#5f5f70;--line:#e6e6ef;--card:#fff;--accent:#5b5bd6}@media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--fg:#ececf3;--muted:#9d9db0;--line:#24242f;--card:#14141c;--accent:#8b8bf5}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.85 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}.w{max-width:760px;margin:0 auto;padding:28px 20px 64px}header a{display:inline-flex;align-items:center;gap:10px;font-weight:800;text-decoration:none;color:inherit}header img{width:32px;height:32px}h1{font-size:28px;margin:28px 0 6px;letter-spacing:-.01em}.meta{color:var(--muted);font-size:14px;margin:0 0 28px}h2{font-size:19px;margin:34px 0 8px;padding-top:14px;border-top:1px solid var(--line)}ul,ol{padding-left:1.4em}li{margin:4px 0}a{color:var(--accent)}table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0;display:block;overflow-x:auto}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--card)}.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--muted)}footer{margin-top:48px;color:var(--muted);font-size:14px;display:flex;gap:16px;flex-wrap:wrap}</style><style>.rel h2{display:flex;align-items:baseline;gap:12px}.rel time{font-size:14px;font-weight:400;color:var(--muted)}h3{font-size:15px;margin:18px 0 4px;color:var(--accent)}</style></head><body><div class="w"><header><a href="/"><img src="/icon.svg" alt="" width="32" height="32">PosIssue</a></header>
+<h1>リリースノート</h1>
+<p class="meta">PosIssue の変更履歴です。各版の詳細は <a href="https://github.com/ninjin0802/posissue/releases">GitHub Releases</a> にもあります。</p>
+<!-- 元データは CHANGELOG.md。変えたら両方を更新する -->
+<section class="rel" id="v1-2-0"><h2>v1.2.0 <time>2026-11-17</time></h2>
+<h3>新機能</h3>
+<ul>
+<li><strong>承認モード</strong>：届いた報告を、作者が確認してから Issue にできるようになりました。公開リポジトリでは初期設定でオン、非公開リポジトリではすぐに起票します。管理画面の「設定」で切り替えられます。</li>
+<li>承認待ちの報告は管理画面で 1 件ずつ「起票する」「捨てる」を選べます。14 日で自動的に消えます。</li>
+<li><strong>管理画面</strong>を <code>/admin</code> にまとめ、トップページから開けるようにしました（<code>/keys</code> も引き続き使えます）。</li>
+</ul>
+<h3>改善</h3>
+<ul>
+<li>管理画面のデザインを作り直しました（リポジトリごとのタブ、承認待ちの件数表示、設定の切り替え）。</li>
+<li>作者向けの操作に専用の回数制限を設け、承認待ちをまとめて処理できるようにしました。</li>
+</ul>
+<h3>その他</h3>
+<ul>
+<li>プライバシーポリシーに、承認待ちの報告を最大 14 日保存することを追記しました。</li>
+</ul>
+</section><section class="rel" id="v1-1-0"><h2>v1.1.0 <time>2026-11-17</time></h2>
+<h3>新機能</h3>
+<ul>
+<li>管理画面から、リポジトリごとに <strong>埋め込みを許すサイト</strong>（最大 10）と <strong>1 日の上限</strong>（1〜1000 件）を変えられるようになりました。</li>
+</ul>
+<h3>セキュリティ</h3>
+<ul>
+<li>設定を変えられるのを、そのリポジトリの管理者（admin / maintain）だけにしました。</li>
+<li>設定の変更に使う署名にインストール ID を含め、有効期限を 15 分にしました。</li>
+</ul>
+</section><section class="rel" id="v1-0-0"><h2>v1.0.0 <time>2026-11-17</time></h2>
+<p>最初の公開版です。</p>
+<h3>主な機能</h3>
+<ul>
+<li>サイトに <code>&lt;script&gt;</code> を 1 行置くだけ、アプリなら URL を WebView で開くだけで、GitHub アカウントのない人も Issue を送れるウィジェット。</li>
+<li><strong>フォームは型で決まる</strong>：<code>FormTemplate</code> を渡すと、画面・入力チェック・Issue 本文の形がそろって決まります。</li>
+<li>美しい送信フォーム（ライト / ダーク自動切替、日本語 / English 切り替え）。</li>
+<li>スパム対策：Cloudflare Turnstile、ハニーポット、送信速度、URL の数、IP ごと・1 日ごとの制限、重複検出、@メンションと #番号の無効化。</li>
+<li>GitHub App によるインストールと、キーの確認画面、CLI（<code>npx github:ninjin0802/posissue keys</code>）。</li>
+<li>AI 向けの導入手順 <code>/llms.txt</code> と、開発ルール <code>AGENTS.md</code>。</li>
+<li>公式ホスト <a href="https://posissue.2nj.lol">https://posissue.2nj.lol</a> （Cloudflare Workers）、OGP、プライバシーポリシー、利用規約。</li>
+</ul>
+<h3>セキュリティ</h3>
+<ul>
+<li>公開前のセキュリティ監査で見つかった問題を修正しました（セットアップ画面からの非公開リポジトリ名の漏えい、ログイン CSRF、URL 数の数え漏れ、Turnstile の hostname 確認、本文サイズの上限、CSP など）。</li>
+</ul></section>
+<footer><a href="/">トップ</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="/changelog">リリースノート</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer></div></body></html>

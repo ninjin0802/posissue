@@ -250,7 +250,7 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <meta property="og:image:alt" content="PosIssue — アカウントがなくても、だれでも Issue を。">
 <meta name="twitter:card" content="summary_large_image"><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly docs"><style>${LANDING_STYLE}</style></head><body>
 <nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
-<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a href="/admin">管理画面</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
+<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a class="h" href="/changelog">リリースノート</a><a href="/admin">管理画面</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
 <header class="hero"><div class="w"><div>
 <img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(91,91,214,.35))"><span class="pill">OSS のための報告ウィジェット</span>
 <h1><span>アカウントがなくても、</span><br><em>だれでも Issue を。</em></h1>
@@ -305,7 +305,7 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 <div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="/admin">管理画面</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
 </div></div></section>
 
-<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><span class="fl"><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="${esc(o.repoUrl)}">GitHub</a></span></div></footer>
+<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><span class="fl"><a href="/changelog">リリースノート</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="${esc(o.repoUrl)}">GitHub</a></span></div></footer>
 <script nonce="${o.nonce}">
 document.querySelectorAll("[role=tab]").forEach(function(b){b.addEventListener("click",function(){
 document.querySelectorAll("[role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b)});
@@ -478,7 +478,7 @@ ${o.justInstalled ? `<div class="ok-banner" role="status">✅ インストール
 ${o.rows.length ? cards : empty}
 ${o.rows.length ? `<div class="addcard"><span>別のリポジトリにも入れる・外す</span><a class="ghost" style="text-decoration:none" href="${esc(install)}">リポジトリを追加・変更</a></div>` : ""}
 </main>
-<footer><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer>
+<footer><a href="/changelog">リリースノート</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer>
 <script nonce="${o.nonce}">
 (function(){
 var SESSION=${JSON.stringify(o.session)};
