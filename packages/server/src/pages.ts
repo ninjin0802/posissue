@@ -192,7 +192,8 @@ h1{font-size:clamp(30px,4.6vw,52px);line-height:1.12;letter-spacing:-.03em;margi
 h1 span,h1 em{white-space:nowrap}h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .lead{font-size:18px;color:var(--muted);margin:0 0 30px;max-width:34em}
 .cta{display:flex;gap:12px;flex-wrap:wrap}
-.npm{display:inline-flex;align-items:center;gap:4px;margin-top:18px;padding:4px 4px 4px 16px;border-radius:12px;background:var(--code);color:var(--codefg);font:14px/1 ui-monospace,Menlo,monospace;max-width:100%}
+.npmlbl{margin:22px 0 6px;font-size:13px;color:var(--muted)}
+.npm{display:inline-flex;align-items:center;gap:4px;margin-top:0;padding:4px 4px 4px 16px;border-radius:12px;background:var(--code);color:var(--codefg);font:14px/1 ui-monospace,Menlo,monospace;max-width:100%}
 .npm code span{opacity:.5;margin-right:6px}
 .cpy{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--codefg);cursor:pointer;opacity:.75}
 .cpy:hover{opacity:1;background:rgba(255,255,255,.08)}.cpy.done{color:#4cd498;opacity:1}
@@ -250,7 +251,7 @@ h1{font-size:31px;line-height:1.2;margin-bottom:14px}
 .hero .cta{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hero .cta .btn{justify-content:center;padding:13px 10px}
 .hero .cta .btn.p{grid-column:1/-1}
-.npm{display:flex;width:100%;margin-top:12px}
+.npmlbl{margin:18px 0 6px;font-size:12.5px}.npm{display:flex;width:100%;margin-top:0}
 .npm code{flex:1}
 .demo{height:540px;border-radius:18px}
 h2{font-size:24px}.sub{font-size:14.5px;margin-bottom:22px}
@@ -334,7 +335,7 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <h1>${t("<span>アカウントがなくても、</span><br><em>だれでも Issue を。</em>", "<span>No account needed.</span><br><em>Anyone can file an issue.</em>")}</h1>
 <p class="lead">${t("サイトやアプリにウィジェットを 1 行置くだけ。利用者からのバグ報告や要望が、あなたのリポジトリに GitHub Issue として届きます。", "Add one line to your site or app. Bug reports and feature requests from your users arrive in your repository as GitHub issues.")}</p>
 <div class="cta"><a class="btn p" href="${esc(install)}">${t("GitHub App をインストール →", "Install the GitHub App →")}</a><a class="btn" href="/admin">${t("管理画面", "Dashboard")}</a><a class="btn" href="${esc(o.repoUrl)}">${t("ソースを見る", "View source")}</a></div>
-<div class="npm"><code><span aria-hidden="true">$</span> npm i posissue</code><button type="button" class="cpy" data-copy="npm i posissue" aria-label="${t("コマンドをコピー", "Copy command")}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a href="https://www.npmjs.com/package/posissue" class="npmlink">npm ↗</a></div>
+<p class="npmlbl">${t("React・Vue・Next.js なら、npm からも入れられます", "Using React, Vue or Next.js? Install it from npm")}</p><div class="npm"><code><span aria-hidden="true">$</span> npm i posissue</code><button type="button" class="cpy" data-copy="npm i posissue" aria-label="${t("コマンドをコピー", "Copy command")}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a href="https://www.npmjs.com/package/posissue" class="npmlink">npm ↗</a></div>
 </div><div class="demo">${demo}</div></div></header>
 
 <section id="features"><div class="w">
