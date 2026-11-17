@@ -44,6 +44,13 @@
 
 [公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。あとから確認したいときは **[キーを確認](https://posissue.2nj.lol/keys)** から GitHub でログインするだけで、自分のリポジトリのキーと貼り付け用コードが一覧で出ます。
 
+ターミナルからも確認できます（Node 18+）。表示された URL とコードでブラウザからログインすると、キーが出ます。
+
+```sh
+npx github:ninjin0802/posissue keys          # 一覧
+npx github:ninjin0802/posissue keys --json   # JSON（スクリプトや AI 向け）
+```
+
 ### 2. ウィジェットを置く
 
 <table>

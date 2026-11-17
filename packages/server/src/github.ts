@@ -54,6 +54,22 @@ export async function userToken(clientId: string, clientSecret: string, code: st
   return ((await res.json()) as { access_token?: string }).access_token ?? null;
 }
 
+/**
+ * トークンが「この App のために発行されたユーザートークン」か GitHub に確かめる（CLI の /api/keys 用）。
+ * 他の App のトークンや PAT を受け付けると、別アプリのインストール ID でプロジェクトを作ってしまうため。
+ */
+export async function isOurUserToken(clientId: string, clientSecret: string, token: string): Promise<boolean> {
+  const res = await fetch(`${API}/applications/${clientId}/token`, {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`, accept: "application/vnd.github+json",
+      "content-type": "application/json", "user-agent": "posissue", "x-github-api-version": "2022-11-28",
+    },
+    body: JSON.stringify({ access_token: token }),
+  });
+  return res.ok;
+}
+
 /** そのユーザーがアクセスできる、この App のインストール ID の一覧。 */
 export async function userInstallations(token: string): Promise<number[]> {
   // shortcut: 先頭 100 件のみ。1 ユーザーが 100 を超えるインストールを持つならページングを足す

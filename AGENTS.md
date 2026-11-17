@@ -26,6 +26,10 @@ npm run typecheck   # tsc
 cd apps/hosted && npx wrangler dev   # .dev.vars にテスト用の値が必要（Turnstile のテストキーなど）
 ```
 
+## キーの取得（CLI）
+
+`node cli/posissue.mjs keys --json`（公開後は `npx github:ninjin0802/posissue keys --json`）。GitHub のデバイスフローで、表示された URL とコードを**ユーザーに渡し、ログインと許可はユーザーにやってもらう**。エージェントがログインしない。
+
 ## 守ること
 
 - **main に直接 push しない。** ブランチ → PR → CI（typecheck + test）が通る → マージ → その後に `wrangler deploy`。

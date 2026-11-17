@@ -4,7 +4,7 @@ import {
   type ErrorCode, type FormTemplate, type ReportResponse,
 } from "@posissue/core";
 import { mount } from "posissue";
-import { createIssue, userInstallationRepos, userInstallations, userToken, verifyWebhook, type GitHubCreds } from "./github";
+import { createIssue, isOurUserToken, userInstallationRepos, userInstallations, userToken, verifyWebhook, type GitHubCreds } from "./github";
 import { formPage, ICON_SVG, keysPage, landingPage, messagePage, type KeyRow } from "./pages";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
@@ -195,6 +195,30 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
     });
   }
 
+  /**
+   * CLI 用（4.5）。GitHub のデバイスフローで作者自身がログインして得たユーザートークンを受け取り、
+   * そのユーザーがアクセスできるリポジトリのキーを JSON で返す。トークンは保存しない。
+   */
+  async function apiKeys(req: Request, env: Env): Promise<Response> {
+    const json = (body: unknown, status = 200) =>
+      Response.json(body, { status, headers: { "cache-control": "no-store" } });
+    const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+    if (!(await env.RL_IP.limit({ key: `keys:${ip}` })).success) return json({ ok: false, error: "rate_limited" }, 429);
+    const token = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];
+    if (!token) return json({ ok: false, error: "unauthorized" }, 401);
+    try {
+      if (!(await isOurUserToken(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET, token))) return json({ ok: false, error: "unauthorized" }, 401);
+      const rows: KeyRow[] = [];
+      for (const id of await userInstallations(token)) {
+        for (const repo of (await userInstallationRepos(token, id)) ?? []) rows.push(await ensureProject(env, id, repo));
+      }
+      return json({ ok: true, endpoint: new URL(req.url).origin, keys: rows.map((r) => ({ repo: r.repo, key: r.key, stopped: r.key === null })) });
+    } catch (e) {
+      console.log(String(e));
+      return json({ ok: false, error: "upstream_error" }, 502);
+    }
+  }
+
   /** GitHub の認可画面へ送る。state = ランダム値.対象 を、同じ値の短命クッキーと組にする。 */
   function startAuth(env: Env, target: string) {
     const state = `${crypto.randomUUID().replace(/-/g, "")}.${target}`;
@@ -301,6 +325,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
       if (req.method === "GET" && path === "/setup") return setup(req, url, env);
       // あとからキーを確認するページ。GitHub の認可画面へ送り、戻り先の /setup で一覧を出す
       if (req.method === "GET" && path === "/keys") return startAuth(env, "keys");
+      if (req.method === "GET" && path === "/api/keys") return apiKeys(req, env);
       if (req.method === "POST" && path === "/webhook") return webhook(req, env);
       if (req.method === "GET" && path === "/") {
         const nonce = crypto.randomUUID().replace(/-/g, "");
