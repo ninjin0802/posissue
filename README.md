@@ -42,7 +42,7 @@
 
 ### 1. GitHub App をインストール
 
-[公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。
+[公式ホスト](https://posissue.2nj.lol)の [GitHub App](https://github.com/apps/posissue/installations/new) をリポジトリにインストールすると、`projectKey`（`pk_...`）が発行されます。あとから確認したいときは **[キーを確認](https://posissue.2nj.lol/keys)** から GitHub でログインするだけで、自分のリポジトリのキーと貼り付け用コードが一覧で出ます。
 
 ### 2. ウィジェットを置く
 
