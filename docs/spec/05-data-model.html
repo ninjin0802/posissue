@@ -29,7 +29,7 @@ CREATE TABLE recent_hashes (    -- 重複投稿検出
 <ul>
 <li>報告者の IP や UA は保存しない（IP は Rate Limiting バインディングのキーとしてのみ使う）。</li>
 <li>キーの停止は <code>active = 0</code>。削除はしない。</li>
-<li><code>allowed_origins</code> の変更は v1 では運営が D1 を直接更新する。</li>
+<li><code>allowed_origins</code> と <code>daily_limit</code> は、作者がキー確認画面の「設定」から変える（4.6）。</li>
 </ul>
 
 </main><script src="nav.js"></script></body></html>
