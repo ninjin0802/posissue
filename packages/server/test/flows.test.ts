@@ -158,6 +158,17 @@ describe("pages and OAuth", () => {
     expect(await ja.text()).toContain('<html lang="ja">');
   });
 
+  it("applies a valid accent color to the form and keeps it out of the issue meta", async () => {
+    const { env } = await setup();
+    const ok = await (await call(env, `/r/${KEY}?color=e91e63&app_version=2`)).text();
+    expect(ok).toContain("--accent:#e91e63");
+    expect(ok).toContain('"app_version":"2"');
+    expect(ok).not.toContain('"color"');
+    const bad = await (await call(env, `/r/${KEY}?color=red;}body{display:none`)).text();
+    expect(bad).not.toContain("--accent:#red");
+    expect(bad).not.toContain("body{display:none");
+  });
+
   it("serves the form for active projects only", async () => {
     const { env } = await setup();
     expect((await call(env, `/r/${KEY}`)).status).toBe(200);

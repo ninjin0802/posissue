@@ -54,8 +54,11 @@ const STATUS: Record<ErrorCode, number> = {
 const WIDGET_JS =
   // wrangler(esbuild) の keepNames が関数本体に __name(...) を差し込むので、toString した先でも動くよう同名の素通し関数を置く
   `(function(){var __name=function(f){return f};var s=document.currentScript;if(!s)return;var mount=${mount.toString()};` +
-  `var go=function(){mount({projectKey:s.dataset.key,endpoint:new URL(s.src).origin,position:s.dataset.position,label:s.dataset.label,lang:s.dataset.lang,` +
-  `kinds:s.dataset.kinds?s.dataset.kinds.split(","):undefined})};document.body?go():addEventListener("DOMContentLoaded",go)})();`;
+  // data-* 属性から設定を読む。window.PosIssue.open() で自前のボタンからも開ける
+  `var d=s.dataset,n=function(v){return v===undefined||v===""?undefined:Number(v)},o=(d.offset||"").split(",");` +
+  `var go=function(){window.PosIssue=mount({projectKey:d.key,endpoint:new URL(s.src).origin,position:d.position,label:d.label,lang:d.lang,` +
+  `kinds:d.kinds?d.kinds.split(","):undefined,button:d.button!=="false",variant:d.variant,color:d.color,zIndex:n(d.zIndex),` +
+  `offset:o.length>1?{x:n(o[0]),y:n(o[1])}:n(o[0])})};document.body?go():addEventListener("DOMContentLoaded",go)})();`;
 
 // スクリプトのない案内ページ用の既定 CSP。フォームとトップページは自分の CSP で上書きする
 const STATIC_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'";
@@ -408,9 +411,12 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
         const meta: Record<string, string> = {};
         let shown = forms;
         let lang: "ja" | "en" | undefined;
+        let color: string | undefined;
         for (const [k, v] of url.searchParams) {
           if (k === "lang") {
             if (v === "ja" || v === "en") lang = v;
+          } else if (k === "color") {
+            if (/^#?[0-9a-fA-F]{6}$/.test(v)) color = v.replace("#", "");
           } else if (k === "kinds") {
             const ks = v.split(",");
             const picked = forms.filter((t) => ks.includes(t.kind));
@@ -425,7 +431,7 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
           // 許可リストがあれば、埋め込めるサイトをそこに限る（Origin チェックの実体）
           `frame-ancestors ${allowed.length ? allowed.join(" ") : "*"}`,
         ].join("; ");
-        return html(formPage({ projectKey: p.key, repo: p.repo, siteKey: env.TURNSTILE_SITE_KEY, forms: shown, meta, nonce, lang }), {
+        return html(formPage({ projectKey: p.key, repo: p.repo, siteKey: env.TURNSTILE_SITE_KEY, forms: shown, meta, nonce, lang, color }), {
           "content-security-policy": csp, "referrer-policy": "no-referrer",
         });
       }

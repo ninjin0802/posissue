@@ -70,10 +70,17 @@ const GH_ICON = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentCo
 const OK_ICON = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg>`;
 
 /** フォームの見た目はフォームの型（FormTemplate[]）から組み立てる。値は textContent で入れるので HTML 注入されない。 */
-export function formPage(o: { projectKey: string; repo: string; siteKey: string; forms: FormTemplate[]; meta: Record<string, string>; nonce: string; lang?: "ja" | "en" }) {
+export function formPage(o: { projectKey: string; repo: string; siteKey: string; forms: FormTemplate[]; meta: Record<string, string>; nonce: string; lang?: "ja" | "en"; color?: string }) {
   const cfg = JSON.stringify({ key: o.projectKey, repo: o.repo, forms: o.forms, meta: o.meta, lang: o.lang }).replace(/</g, "\\u003c");
+  // 作者が指定したアクセント色（6 桁の 16 進だけを受け付ける）。明るい色なら文字を黒に
+  let accent = "";
+  if (o.color && /^[0-9a-fA-F]{6}$/.test(o.color)) {
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(o.color!.slice(i, i + 2), 16));
+    const fg = (r * 299 + g * 587 + b * 114) / 1000 > 160 ? "#16161d" : "#fff";
+    accent = `<style>:root,:root:not(#x){--accent:#${o.color};--accent-fg:${fg};--accent-soft:rgba(${r},${g},${b},.14)}</style>`;
+  }
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark"><title>Feedback</title><style>${STYLE}</style>
+<meta name="color-scheme" content="light dark"><title>Feedback</title><style>${STYLE}</style>${accent}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="${o.nonce}"></script></head><body>
 <div class="wrap">
 <header><div><h1 id="h"></h1><p class="sub">${GH_ICON}<span id="repo"></span></p></div>

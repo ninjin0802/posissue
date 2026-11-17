@@ -65,12 +65,17 @@ init({
   projectKey: "pk_xxx",
   endpoint?: "https://posissue.example",   // 省略時は公式ホスト
   kinds?: ["bug", "feature", "other"],     // 表示する種別
-  position?: "bottom-right" | "bottom-left",
+  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left",
+  offset?: number | { x?: number; y?: number }, // 端からの距離 px（既定 20）
+  button?: boolean,                        // false で浮いたボタンを出さない（open() で開く）
+  variant?: "pill" | "icon",               // 文字付き（既定）／丸いアイコンだけ
+  color?: "#rrggbb",                       // ボタンとフォームのアクセント色
+  zIndex?: number,
   label?: "フィードバック",                  // ボタンの文言
   lang?: "ja" | "en",                      // フォームの言語。省略時はブラウザの言語
   meta?: { appVersion: "1.2.0" },          // Issue に付ける追加情報
 }): { open(): void; close(): void; destroy(): void };</code></pre>
-<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。<code>data-position</code>、<code>data-label</code>、<code>data-lang</code> も使える。</p>
+<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。すべての設定に <code>data-</code> 属性がある（<code>data-position</code>・<code>data-offset="x,y"</code>・<code>data-button="false"</code>・<code>data-variant</code>・<code>data-color</code>・<code>data-label</code>・<code>data-lang</code>・<code>data-kinds</code>・<code>data-z-index</code>）。script タグ版は <code>window.PosIssue</code> に open / close / destroy を置く。<code>color</code> は 6 桁の 16 進だけを受け付け、不正なら既定色にする。</p>
 <h2>3.4 サーバー（@posissue/server）</h2>
 <pre><code>import { createHandler } from "@posissue/server";
 
