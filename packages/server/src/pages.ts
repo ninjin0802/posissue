@@ -59,7 +59,7 @@ button.busy .spin{display:block}
 .done h2{font-size:18px;margin:10px 0 4px}.done p{color:var(--muted);margin:0 0 18px}
 .done a{color:var(--accent)}
 button.ghost{background:none;border:1.5px solid var(--line);border-radius:10px;padding:9px 16px;color:var(--fg);font:inherit;cursor:pointer}
-footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12px}
+footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12px}footer a{color:var(--muted)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}`;
 
@@ -90,13 +90,14 @@ export function formPage(o: { projectKey: string; repo: string; siteKey: string;
 </form>
 <div class="card done" id="done" hidden>${OK_ICON}<h2 data-t="thanks"></h2><p id="doneText"></p>
 <button type="button" class="ghost" id="again" data-t="again"></button></div>
-<footer data-t="foot"></footer>
+<footer><span data-t="foot"></span> · <a href="/privacy" target="_blank" rel="noopener" data-t="privacy"></a></footer>
 </div>
 <script nonce="${o.nonce}">
 (function(){
 var C=${cfg},t0=Date.now(),L=C.lang||((navigator.language||"").slice(0,2)==="ja"?"ja":"en");
 var T={title:["Title","タイトル"],send:["Send report","送信する"],thanks:["Thank you!","送信しました"],again:["Send another","もう一件送る"],
 note:["Your report, the page URL and browser info will be posted as an issue in this repository.","送信した内容と、ページの URL・ブラウザの情報が、このリポジトリの Issue に掲載されます。"],
+privacy:["Privacy","プライバシー"],
 foot:["No GitHub account needed · Powered by PosIssue","GitHub アカウントは不要です · Powered by PosIssue"],h:["Send feedback","フィードバックを送る"],
 sent:["Your report was posted as issue #","Issue #"],sent2:[".","として登録されました。"],
 required:["Please fill in the required fields.","必須項目を入力してください。"],
@@ -210,7 +211,7 @@ pre.solo{border-radius:14px}.k{color:#c4a7ff}.s{color:#9ee6a8}.c{color:#7d7d92}
 .flow span:last-child{background:var(--accent);color:#fff;border-color:var(--accent)}
 .final{text-align:center;border:1px solid var(--line);border-radius:24px;padding:56px 20px;background:linear-gradient(135deg,var(--soft),transparent)}
 .final .cta{justify-content:center}
-footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}footer .w{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}footer .fl{display:flex;gap:16px}footer .w{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 @media (max-width:860px){.hero .w,.two{grid-template-columns:1fr}.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}nav .links a.h{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}`;
 
@@ -302,7 +303,7 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 <div class="cta"><a class="btn p" href="${esc(install)}">GitHub App をインストール →</a><a class="btn" href="${esc(o.repoUrl)}#readme">ドキュメント</a></div>
 </div></div></section>
 
-<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><a href="${esc(o.repoUrl)}">github.com/ninjin0802/posissue</a></div></footer>
+<footer><div class="w"><span>© 2026 <a href="https://github.com/ninjin0802">ninjin0802</a> · PosIssue is MIT licensed</span><span class="fl"><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="${esc(o.repoUrl)}">GitHub</a></span></div></footer>
 <script nonce="${o.nonce}">
 document.querySelectorAll("[role=tab]").forEach(function(b){b.addEventListener("click",function(){
 document.querySelectorAll("[role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b)});
@@ -368,7 +369,7 @@ details{margin-top:12px}summary{cursor:pointer;color:var(--accent);font-size:14p
 <p class="lead">GitHub アカウントで確認できた、あなたがアクセスできるリポジトリだけを表示しています。キーはサイトやアプリに載せる公開の値です。</p>
 ${o.justInstalled ? `<div class="ok" role="status">✅ インストールが完了しました。下のコードをサイトに貼るだけで使えます。</div>` : ""}
 ${o.rows.length ? cards : empty}
-<div class="foot"><a href="${esc(install)}">リポジトリを追加・変更する</a><a href="/">トップへ戻る</a></div>
+<div class="foot"><a href="${esc(install)}">リポジトリを追加・変更する</a><a href="/">トップへ戻る</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a></div>
 </div>
 <script nonce="${o.nonce}">
 document.querySelectorAll("[data-copy]").forEach(function(b){b.addEventListener("click",function(){
