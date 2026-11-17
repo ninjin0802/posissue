@@ -1,0 +1,56 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>プライバシーポリシー | PosIssue</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><style>:root{--bg:#fbfbfe;--fg:#16161d;--muted:#5f5f70;--line:#e6e6ef;--card:#fff;--accent:#5b5bd6}@media (prefers-color-scheme:dark){:root{--bg:#0b0b11;--fg:#ececf3;--muted:#9d9db0;--line:#24242f;--card:#14141c;--accent:#8b8bf5}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.85 ui-sans-serif,system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}.w{max-width:760px;margin:0 auto;padding:28px 20px 64px}header a{display:inline-flex;align-items:center;gap:10px;font-weight:800;text-decoration:none;color:inherit}header img{width:32px;height:32px}h1{font-size:28px;margin:28px 0 6px;letter-spacing:-.01em}.meta{color:var(--muted);font-size:14px;margin:0 0 28px}h2{font-size:19px;margin:34px 0 8px;padding-top:14px;border-top:1px solid var(--line)}ul,ol{padding-left:1.4em}li{margin:4px 0}a{color:var(--accent)}table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0;display:block;overflow-x:auto}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--card)}.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--muted)}footer{margin-top:48px;color:var(--muted);font-size:14px;display:flex;gap:16px;flex-wrap:wrap}</style></head><body><div class="w"><header><a href="/"><img src="/icon.svg" alt="" width="32" height="32">PosIssue</a></header>
+<h1>プライバシーポリシー</h1>
+<p class="meta">制定日：2026年11月17日 ／ 運営：ninjin0802（個人）</p>
+<p>PosIssue（以下「本サービス」）は、ウェブサイトやアプリに置いたウィジェットから、GitHub アカウントがなくても GitHub の Issue を送れるようにするサービスです。本サービスが扱う情報と、その使い方を説明します。</p>
+
+<h2>1. 報告する方（報告者）について</h2>
+<p>フォームから送信すると、次の情報が<strong>導入先のリポジトリの GitHub Issue として掲載</strong>されます。公開リポジトリの場合、誰でも閲覧できる状態になります。</p>
+<table>
+<tr><th>情報</th><th>内容</th></tr>
+<tr><td>入力した内容</td><td>種別、タイトル、フォームの各項目</td></tr>
+<tr><td>ページの URL</td><td>ウィジェットを開いたページの URL（クエリ文字列とハッシュは除く）</td></tr>
+<tr><td>ブラウザの情報</td><td>ユーザーエージェント、言語設定、画面の大きさ</td></tr>
+<tr><td>アプリが付ける情報</td><td>導入先のアプリが付けた情報（アプリのバージョン、OS など）</td></tr>
+</table>
+<p>本サービスは、報告者の <strong>IP アドレス・氏名・メールアドレス・GitHub アカウントを収集・保存しません</strong>。ただし次の処理のために、IP アドレスを一時的に使います。</p>
+<ul>
+<li>ボット対策：Cloudflare Turnstile による確認（Cloudflare 社が処理します）</li>
+<li>連続投稿の制限：短時間の回数の数え上げ（保存はしません）</li>
+<li>重複投稿の検出：送信内容から作った値（ハッシュ）を 24 時間だけ保存します。内容そのものは保存しません</li>
+</ul>
+<p>個人を特定できる情報や、見られて困る情報は入力しないでください。掲載後の Issue の編集・削除は、そのリポジトリの管理者が行います。削除を希望する場合は、まずそのリポジトリの管理者にご連絡ください。</p>
+
+<h2>2. 導入する方（作者）について</h2>
+<p>GitHub App のインストール、キーの確認画面（/keys）、CLI を使うと、本サービスは次の情報を扱います。</p>
+<ul>
+<li>GitHub App のインストール ID と、そのインストールで選ばれたリポジトリ名（キーとの対応を保存します）</li>
+<li>GitHub でのログイン時に発行される一時的な認可情報（あなたがアクセスできるリポジトリを確認するためだけに使い、<strong>保存しません</strong>）</li>
+</ul>
+<p>本サービスが GitHub に求める権限は、リポジトリの Issue の読み書きと、メタデータの読み取りだけです。ソースコードは読みません。</p>
+
+<h2>3. 利用する外部サービス</h2>
+<ul>
+<li><strong>Cloudflare</strong>（Workers・D1・Turnstile）：本サービスの実行、データの保存、ボット対策</li>
+<li><strong>GitHub</strong>：Issue の作成、App の認証、作者の確認</li>
+</ul>
+<p>これらの事業者は、それぞれのプライバシーポリシーに従って情報を扱います。</p>
+
+<h2>4. Cookie</h2>
+<p>キーの確認画面のログイン処理で、不正なログインを防ぐための Cookie（<code>pi_state</code>）を最大 10 分間だけ使います。広告やアクセス解析のための Cookie は使いません。Cloudflare Turnstile がボット対策のために独自の仕組みを使うことがあります。</p>
+
+<h2>5. 第三者への提供</h2>
+<p>法令に基づく場合を除き、上記以外の目的で第三者に提供しません。報告の内容は、報告者が送信先として選んだリポジトリに掲載されます。</p>
+
+<h2>6. 保存期間</h2>
+<ul>
+<li>プロジェクトの情報（リポジトリ名とキー）：App がアンインストールされたあとも、停止状態として残ります。削除を希望する場合はご連絡ください</li>
+<li>重複検出用のハッシュ：24 時間</li>
+<li>日ごとの送信件数：集計のために日付とキーごとの件数を保存します</li>
+</ul>
+
+<h2>7. お問い合わせ</h2>
+<p>本ポリシーや本サービスの情報の扱いについては、<a href="https://github.com/ninjin0802/posissue/issues">GitHub の Issue</a> からご連絡ください。公開の場に書きにくい内容は、その旨を Issue に書いていただければ、連絡方法をご案内します。</p>
+
+<h2>8. 改定</h2>
+<p>本ポリシーは、必要に応じて改定することがあります。重要な変更は、このページでお知らせします。</p>
+<footer><a href="/">トップ</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="https://github.com/ninjin0802/posissue">GitHub</a><span>© 2026 ninjin0802</span></footer></div></body></html>
