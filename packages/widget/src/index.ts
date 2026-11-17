@@ -10,6 +10,7 @@ export interface WidgetConfig {
   kinds?: ReportKind[];
   position?: "bottom-right" | "bottom-left";
   label?: string;
+  lang?: "ja" | "en"; // 省略時はブラウザの言語。フォーム上でも切り替えられる
   meta?: Record<string, string>;
 }
 
@@ -38,7 +39,7 @@ iframe{border:0;width:100%;height:100%}.x{position:absolute;top:6px;right:8px;bo
   const fab = root.querySelector<HTMLButtonElement>(".fab")!;
   const back = root.querySelector<HTMLDivElement>(".back")!;
   const box = root.querySelector<HTMLDivElement>(".box")!;
-  fab.textContent = cfg.label ?? ((navigator.language || "").startsWith("ja") ? "フィードバック" : "Feedback");
+  fab.textContent = cfg.label ?? ((cfg.lang ?? navigator.language ?? "").startsWith("ja") ? "フィードバック" : "Feedback");
   fab.setAttribute("aria-label", fab.textContent);
   let frame: HTMLIFrameElement | null = null;
 
@@ -50,6 +51,7 @@ iframe{border:0;width:100%;height:100%}.x{position:absolute;top:6px;right:8px;bo
         viewport: `${innerWidth}x${innerHeight}`,
       });
       if (cfg.kinds?.length) q.set("kinds", cfg.kinds.join(","));
+      if (cfg.lang) q.set("lang", cfg.lang);
       frame = document.createElement("iframe");
       frame.title = "Feedback";
       frame.src = `${origin}/r/${encodeURIComponent(cfg.projectKey)}?${q}`;

@@ -15,7 +15,7 @@
 <ul>
 <li>入力：種別（カード型の選択）、タイトル、フォームの型（3.2）の各項目、Turnstile。種別を切り替えると項目も切り替わる。種別が1つなら選択は出さない。ハニーポットは画面外に置き、<code>tabindex=-1</code> と <code>aria-hidden</code> を付ける。</li>
 <li>送信成功時は Issue 番号を表示する（リンクは任意）。</li>
-<li>エラーコードごとに日本語・英語のメッセージを出す（<code>navigator.language</code> で切り替え）。</li>
+<li>日本語・英語に対応する。最初の言語は <code>lang</code> パラメータ、なければ <code>navigator.language</code> で決める。右上の「日本語 / English」で切り替えられ、切り替えても入力途中の内容は消えない。項目のラベルは型の <code>LocalText</code> から、エラーメッセージもその言語で出す。</li>
 <li>JS バンドルなしの素の HTML と少しのインライン JS で作る。項目は型から <code>textContent</code> で組み立て、HTML を差し込まない。</li>
 <li>見た目：カード型の落ち着いたデザイン。ライト/ダーク自動切替、フォーカスリング、必須マーク、文字数カウンター、送信中スピナー、送信完了画面（Issue 番号へのリンク付き）。<code>prefers-reduced-motion</code> を尊重する。</li>
 </ul>

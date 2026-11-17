@@ -67,9 +67,10 @@ init({
   kinds?: ["bug", "feature", "other"],     // 表示する種別
   position?: "bottom-right" | "bottom-left",
   label?: "フィードバック",                  // ボタンの文言
+  lang?: "ja" | "en",                      // フォームの言語。省略時はブラウザの言語
   meta?: { appVersion: "1.2.0" },          // Issue に付ける追加情報
 }): { open(): void; close(): void; destroy(): void };</code></pre>
-<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。<code>data-position</code>、<code>data-label</code> も使える。</p>
+<p>script タグ利用時：<code>&lt;script src="{endpoint}/widget.js" data-key="pk_xxx" async&gt;&lt;/script&gt;</code>。<code>data-position</code>、<code>data-label</code>、<code>data-lang</code> も使える。</p>
 <h2>3.4 サーバー（@posissue/server）</h2>
 <pre><code>import { createHandler } from "@posissue/server";
 
