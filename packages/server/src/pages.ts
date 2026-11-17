@@ -211,9 +211,21 @@ pre.solo{border-radius:14px}.k{color:#c4a7ff}.s{color:#9ee6a8}.c{color:#7d7d92}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
 .flow{display:flex;flex-wrap:wrap;gap:8px}.flow span{font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
 .flow span:last-child{background:var(--accent);color:#fff;border-color:var(--accent)}
+.author{display:flex;gap:28px;align-items:center;border:1px solid var(--line);border-radius:24px;padding:32px;background:var(--card);box-shadow:0 20px 50px rgba(20,20,60,.06);position:relative;overflow:hidden}
+.author:before{content:"";position:absolute;right:-120px;top:-120px;width:320px;height:320px;background:radial-gradient(closest-side,var(--soft),transparent);pointer-events:none}
+.av{width:96px;height:96px;border-radius:50%;flex-shrink:0;object-fit:cover;box-shadow:0 0 0 4px var(--card),0 0 0 6px var(--accent),0 12px 30px rgba(91,91,214,.3)}
+.ab{position:relative;min-width:0}
+.eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);margin-bottom:4px}
+.author h2{margin:0;font-size:26px}
+.role{margin:0 0 10px;color:var(--muted);font-size:14px}
+.bio{margin:0 0 16px;line-height:1.8;max-width:34em}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);text-decoration:none;font-size:14px;font-weight:600;background:var(--bg);transition:border-color .15s,transform .15s}
+.pill:hover{border-color:var(--accent);transform:translateY(-1px)}
+@media (max-width:860px){.author{flex-direction:column;text-align:center;padding:28px 20px}.links{justify-content:center}.bio{margin-left:auto;margin-right:auto}}
 .final{text-align:center;border:1px solid var(--line);border-radius:24px;padding:56px 20px;background:linear-gradient(135deg,var(--soft),transparent)}
 .final .cta{justify-content:center}
-footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}footer .fl{display:flex;gap:16px}footer .w{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}footer .fl{display:flex;gap:6px 16px;flex-wrap:wrap}footer .fl a{white-space:nowrap}footer .w{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 @media (max-width:860px){.hero .w,.two{grid-template-columns:1fr}.grid,.steps{grid-template-columns:1fr}.hero{padding-top:48px}nav .links a.h{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}`;
 
@@ -250,7 +262,7 @@ ${o_}/r/pk_xxx?app_version=1.2.0&amp;os=ios`],
 <meta property="og:image:alt" content="PosIssue — アカウントがなくても、だれでも Issue を。">
 <meta name="twitter:card" content="summary_large_image"><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly docs"><style>${LANDING_STYLE}</style></head><body>
 <nav><div class="w"><a class="logo" href="/"><img src="/icon.svg" alt="" width="28" height="28">PosIssue</a><div class="links">
-<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a class="h" href="/changelog">リリースノート</a><a href="/admin">管理画面</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
+<a class="h" href="#features">特長</a><a class="h" href="#start">はじめかた</a><a class="h" href="/changelog">リリースノート</a><a class="h" href="#author">作った人</a><a href="/admin">管理画面</a><a href="${esc(o.repoUrl)}">GitHub</a></div></div></nav>
 <header class="hero"><div class="w"><div>
 <img src="/icon.svg" alt="PosIssue" width="72" height="72" style="display:block;margin-bottom:18px;filter:drop-shadow(0 12px 28px rgba(91,91,214,.35))"><span class="pill">OSS のための報告ウィジェット</span>
 <h1><span>アカウントがなくても、</span><br><em>だれでも Issue を。</em></h1>
@@ -299,6 +311,15 @@ ${codes.map(([, c], i) => `<pre role="tabpanel" data-p="${i}"${i ? " hidden" : "
 <h2>スパムは、届く前に止める。</h2><p class="sub">安い検査から順に行い、どれかに引っかかった時点で止めます。</p>
 <div class="flow"><span>入力チェック</span><span>ハニーポット</span><span>送信速度</span><span>URL の数</span><span>埋め込み元</span><span>IP ごとの制限</span><span>Turnstile</span><span>1 日の上限</span><span>重複検出</span><span>Issue 作成</span></div>
 </div></section>
+
+<section id="author" style="padding-bottom:0"><div class="w"><div class="author">
+<img class="av" src="/author.png" alt="ninjin のアイコン" width="96" height="96" loading="lazy">
+<div class="ab"><span class="eyebrow">作った人</span>
+<h2>ninjin</h2><p class="role">個人開発者</p>
+<p class="bio">個人開発者です。Web アプリ、Android アプリ、プログラミング言語まで、気になったものは作って確かめています。</p>
+<div class="links"><a class="pill" href="https://github.com/ninjin0802" rel="me noopener" target="_blank">${GH_ICON}<span>GitHub</span></a>
+<a class="pill" href="https://2nj.lol" rel="me noopener" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>2nj.lol</span></a></div>
+</div></div></div></section>
 
 <section><div class="w"><div class="final">
 <h2>利用者の声を、もっと近くに。</h2><p class="sub">無料で、いますぐ始められます。</p>
