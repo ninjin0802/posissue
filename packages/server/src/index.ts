@@ -5,7 +5,7 @@ import {
 } from "@posissue/core";
 import { mount } from "posissue";
 import { createIssue, getInstallation, listInstallationRepos, verifyWebhook, type GitHubCreds } from "./github";
-import { esc, formPage, landingPage, messagePage } from "./pages";
+import { esc, formPage, ICON_SVG, landingPage, messagePage } from "./pages";
 
 export type { ReportRequest, ReportResponse, ErrorCode, FormTemplate, FormField } from "@posissue/core";
 export { DEFAULT_FORMS } from "@posissue/core";
@@ -191,6 +191,10 @@ export function createHandler(config: ServerConfig = {}): ExportedHandler<Env> {
           return new Response(null, { status: 204, headers: h });
         }
         if (req.method === "POST") return report(req, env, cors);
+      }
+
+      if (req.method === "GET" && (path === "/icon.svg" || path === "/favicon.ico")) {
+        return new Response(ICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
       }
 
       if (req.method === "GET" && path === "/widget.js") {

@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/images/icon.svg" alt="PosIssue" width="120" height="120">
+
 # PosIssue
 
 **GitHub アカウントがなくても、だれでも Issue を送れる。**
