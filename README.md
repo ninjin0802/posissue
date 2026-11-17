@@ -187,6 +187,10 @@ cd apps/hosted && npx wrangler dev
 - 厳しい CSP のサイトでは、`script-src` と `frame-src` に `posissue.2nj.lol` を追加してください。
 - v1 では、報告した人への返信、スクリーンショットの添付、管理画面はまだありません（[ロードマップ](docs/spec/10-roadmap.html)）。
 
+## 📝 リリースノート
+
+[CHANGELOG.md](CHANGELOG.md)・[ホームページ版](https://posissue.2nj.lol/changelog)・[GitHub Releases](https://github.com/ninjin0802/posissue/releases)
+
 ## 📄 ライセンス・規約
 
 公式ホストの[プライバシーポリシー](https://posissue.2nj.lol/privacy)・[利用規約](https://posissue.2nj.lol/terms)。
