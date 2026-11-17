@@ -6,8 +6,11 @@
 
 1. The maintainer must install the GitHub App on the target repository: https://github.com/apps/posissue/installations/new
    (This is a human step: it grants permissions on GitHub. Ask the user to do it.)
-2. The maintainer gets the project key (`pk_` + 24 alphanumerics) at https://posissue.2nj.lol/keys after signing in with GitHub.
-   Ask the user for the key. It is a public value (it is embedded in web pages), not a secret.
+2. Get the project key (`pk_` + 24 alphanumerics). It is a public value (it is embedded in web pages), not a secret. Either:
+   - Run `npx github:ninjin0802/posissue keys --json` (Node 18+). It prints a GitHub URL and a one-time code to stderr.
+     Show them to the user and let the USER open the URL, enter the code and approve in their browser. Never do the GitHub login yourself.
+     stdout then returns JSON: `{ "ok": true, "endpoint": "...", "keys": [{ "repo": "owner/name", "key": "pk_...", "stopped": false }] }`. Pick the key for the target repo.
+   - Or ask the user to open https://posissue.2nj.lol/keys and paste the key.
 3. Add the widget. Choose ONE:
 
 ### Website (plain HTML, any framework)
